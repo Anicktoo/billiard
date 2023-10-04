@@ -1,0 +1,20 @@
+{
+    "rules": {
+        "no-unused-vars": "warn",
+        "no-undef": "warn",
+        "no-useless-escape": "warn"
+    },
+    "env": {
+        "browser": true,
+        "es2021": true,
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module"
+    },
+    "globals": {
+        "uiControls": true
+    }
+    // "parser": "@babel/eslint-parser"
+}
