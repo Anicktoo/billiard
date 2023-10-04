@@ -13,13 +13,14 @@ export class Game {
     gameIsRunning;
 
 
-    constructor(view, tableWidth, tableHeight, ballRadius, frictionKoef) {
+    constructor(view, tableWidth, tableHeight, ballRadius, frictionKoef, restitution) {
         this.view = view;
         this.tableWidth = tableWidth;
         this.tableHeight = tableHeight;
         this.cue = new Cue();
         Ball.radius = ballRadius;
         Ball.frictionKoef = frictionKoef;
+        Ball.restitution = restitution;
         this.initBalls();
         this.oldTime = 0;
         this.gameIsRunning = false;
@@ -41,7 +42,7 @@ export class Game {
         let maxInLayer = 1;
         let addition = 2;
         this.balls[0] = new Ball(new Vector2(this.tableWidth / 3, y));
-        this.balls[0].set(new Vector2(this.tableWidth / 3, y), new Vector2(1, 0), 10);
+        this.balls[0].set(new Vector2(this.tableWidth / 3, y), new Vector2(1, 1), 10);
         for (let i = 1; i < 16; i++) {
             this.balls[i] = new Ball(new Vector2(x + xShift, y + yShift + yInColumnShift));
             yInColumnShift += diameter + 1;
@@ -60,7 +61,7 @@ export class Game {
         this.update();
         if (this.gameIsRunning) {
             this.view.render(
-                this.balls.map(el => el.getPosition()),
+                this.balls.map(el => el.pos),
                 Ball.radius,
             );
             requestAnimationFrame((time) => {
@@ -75,6 +76,34 @@ export class Game {
     update() {
         for (let ball of this.balls) {
             ball.simulate();
+            this.checkBounds(ball);
+        }
+    }
+
+    checkBounds(ball) {
+        const pos = ball.pos;
+        const dir = ball.dir;
+        console.log(Ball.radius);
+
+        if (pos.x <= Ball.radius) {
+            const newX = 2 * Ball.radius - pos.x;
+            ball.pos = new Vector2(newX, pos.y);
+            ball.dir = new Vector2(-dir.x, dir.y);
+        }
+        else if (pos.x + Ball.radius >= this.tableWidth) {
+            const newX = 2 * (this.tableWidth - Ball.radius) - pos.x;
+            ball.pos = new Vector2(newX, pos.y);
+            ball.dir = new Vector2(-dir.x, dir.y);
+        }
+        if (pos.y <= Ball.radius) {
+            const newY = 2 * Ball.radius - pos.y;
+            ball.pos = new Vector2(pos.x, newY);
+            ball.dir = new Vector2(dir.x, -dir.y);
+        }
+        else if (pos.y + Ball.radius >= this.tableHeight) {
+            const newY = 2 * (this.tableHeight - Ball.radius) - pos.y;
+            ball.pos = new Vector2(pos.x, newY);
+            ball.dir = new Vector2(dir.x, -dir.y);
         }
     }
 }

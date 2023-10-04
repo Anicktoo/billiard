@@ -8,6 +8,10 @@ export class Vector2 {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
 
+    isNormal() {
+        return this.getLength() === 1;
+    }
+
     getNormalized() {
         const length = this.getLength();
         const newX = this.x / length;
@@ -23,6 +27,14 @@ export class Vector2 {
 
     substact(v2) {
         return new Vector2(this.x - v2.x, this.y - v2.y);
+    }
+
+    scale(k) {
+        return new Vector2(this.x * k, this.y * k);
+    }
+
+    dot(v) {
+        return new Vector2(this.x * v.x + this.y * v.y);
     }
 
 }

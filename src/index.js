@@ -7,7 +7,8 @@ import { Controller } from './controller/controller';
 const CANVAS_WIDTH = 1024;
 const CANVAS_HEIGHT = CANVAS_WIDTH / 2;
 const BALL_RADIUS = CANVAS_WIDTH / 64;
-const FRICTION_KOEF = 0.1;
+const FRICTION_KOEF = 0.04;
+const BALL_RESTITUTION = 0.9;
 
 const canvasTable = document.getElementById('canvas-table');
 const canvasForeground = document.getElementById('canvas-foreground');
@@ -17,7 +18,7 @@ canvasForeground.width = CANVAS_WIDTH;
 canvasForeground.height = CANVAS_HEIGHT;
 
 const view = new View(canvasTable, canvasForeground);
-const game = new Game(view, CANVAS_WIDTH, CANVAS_HEIGHT, BALL_RADIUS, FRICTION_KOEF);
+const game = new Game(view, CANVAS_WIDTH, CANVAS_HEIGHT, BALL_RADIUS, FRICTION_KOEF, BALL_RESTITUTION);
 const controller = new Controller(game);
 
 game.start();
