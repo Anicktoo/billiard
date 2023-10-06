@@ -15,6 +15,7 @@ export class Game {
     tableWidth;
     _chosenBall;
     tableHeight;
+    _isFirstHit;
     _isWaitingForHit;
 
 
@@ -27,6 +28,7 @@ export class Game {
         this.initBalls();
         this.oldTime = 0;
         this._isWaitingForHit = true;
+        this._isFirstHit = true;
         this._targetPos = new Vector2(0, 0);
         this.view.renderBalls(
             this.balls.map(el => el.pos),
@@ -102,6 +104,9 @@ export class Game {
     }
 
     chooseBall(pos) {
+        if (this._isFirstHit) {
+            return;
+        }
         for (let i = 0; i < this.balls.length; i++) {
             let vectToBall = this.balls[i].pos.substract(pos);
             const dist = vectToBall.getLength();
@@ -117,6 +122,7 @@ export class Game {
             return;
         }
         this._isWaitingForHit = false;
+        this._isFirstHit = false;
         this._chosenBall.dir = this._targetPos.substract(this._chosenBall.pos);
         this._chosenBall.vel = this._hitPower * 20;
         this.view.renderCue(
