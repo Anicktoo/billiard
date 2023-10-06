@@ -4,23 +4,26 @@ import { View } from '@/view/view.js';
 import { Game } from '@/model/game.js';
 import { Controller } from './controller/controller';
 
-const CANVAS_WIDTH = 1024;
-const CANVAS_HEIGHT = CANVAS_WIDTH / 2;
-const BALL_RADIUS = CANVAS_WIDTH / 64;
-const FRICTION_KOEF = 0.04;
-const BALL_RESTITUTION = 0.9;
 
 const canvasTable = document.getElementById('canvas-table');
-const canvasForeground = document.getElementById('canvas-foreground');
-canvasTable.width = CANVAS_WIDTH;
-canvasTable.height = CANVAS_HEIGHT;
-canvasForeground.width = CANVAS_WIDTH;
-canvasForeground.height = CANVAS_HEIGHT;
+const canvasBalls = document.getElementById('canvas-balls');
+const canvasCue = document.getElementById('canvas-cue');
 
-const view = new View(canvasTable, canvasForeground);
-const game = new Game(view, CANVAS_WIDTH, CANVAS_HEIGHT, BALL_RADIUS, FRICTION_KOEF, BALL_RESTITUTION);
-const controller = new Controller(game);
+const canvasWidth = canvasTable.getBoundingClientRect().width;
+const canvasHeight = canvasTable.getBoundingClientRect().height;
+const ballRadius = canvasWidth / 64;
 
-game.start();
+canvasTable.width = canvasWidth;
+canvasTable.height = canvasHeight;
+canvasBalls.width = canvasWidth;
+canvasBalls.height = canvasHeight;
+canvasCue.width = window.innerWidth;
+canvasCue.height = window.innerHeight;
+
+const view = new View(canvasTable, canvasBalls, canvasCue);
+const game = new Game(view, canvasWidth, canvasHeight, ballRadius);
+const controller = new Controller(game, canvasTable);
+
+game.run();
 
 controller;

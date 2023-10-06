@@ -14,6 +14,9 @@ export class Vector2 {
 
     getNormalized() {
         const length = this.getLength();
+        if (!length) {
+            return new Vector2(0, 0);
+        }
         const newX = this.x / length;
         const newY = this.y / length;
         return new Vector2(newX, newY);
@@ -25,7 +28,7 @@ export class Vector2 {
             this.y + v.y * k);
     }
 
-    substact(v2) {
+    substract(v2) {
         return new Vector2(this.x - v2.x, this.y - v2.y);
     }
 
@@ -34,7 +37,11 @@ export class Vector2 {
     }
 
     dot(v) {
-        return new Vector2(this.x * v.x + this.y * v.y);
+        return this.x * v.x + this.y * v.y;
+    }
+
+    isZero() {
+        return this.x === 0 && this.y === 0;
     }
 
 }

@@ -4,31 +4,34 @@ import { Vector2 } from "../utils/vector";
 
 export class Game {
 
+    static WALL_RESTITUTION = 0.75;
+
     cue;
     view;
     balls;
     oldTime;
+    _hitPower;
+    _targetPos;
     tableWidth;
+    _chosenBall;
     tableHeight;
-    gameIsRunning;
+    _isWaitingForHit;
 
 
-    constructor(view, tableWidth, tableHeight, ballRadius, frictionKoef, restitution) {
+    constructor(view, tableWidth, tableHeight, ballRadius) {
         this.view = view;
         this.tableWidth = tableWidth;
         this.tableHeight = tableHeight;
         this.cue = new Cue();
         Ball.radius = ballRadius;
-        Ball.frictionKoef = frictionKoef;
-        Ball.restitution = restitution;
         this.initBalls();
         this.oldTime = 0;
-        this.gameIsRunning = false;
-    }
-
-    start() {
-        this.gameIsRunning = true;
-        this.run();
+        this._isWaitingForHit = true;
+        this._targetPos = new Vector2(0, 0);
+        this.view.renderBalls(
+            this.balls.map(el => el.pos),
+            Ball.radius,
+        );
     }
 
     initBalls() {
@@ -42,7 +45,7 @@ export class Game {
         let maxInLayer = 1;
         let addition = 2;
         this.balls[0] = new Ball(new Vector2(this.tableWidth / 3, y));
-        this.balls[0].set(new Vector2(this.tableWidth / 3, y), new Vector2(1, 1), 10);
+        this.chosenBall = this.balls[0];
         for (let i = 1; i < 16; i++) {
             this.balls[i] = new Ball(new Vector2(x + xShift, y + yShift + yInColumnShift));
             yInColumnShift += diameter + 1;
@@ -58,52 +61,135 @@ export class Game {
 
     //update game state, render, request new frame
     run() {
-        this.update();
-        if (this.gameIsRunning) {
-            this.view.render(
+        if (!this._isWaitingForHit) {
+            this.update();
+            this.view.renderBalls(
                 this.balls.map(el => el.pos),
                 Ball.radius,
             );
-            requestAnimationFrame((time) => {
-                // this.ball.fpsAdjust(time - this.old_time)
-                this.oldTime = time;
-                this.run();
-            });
         }
+        else {
+            this.view.renderCue(
+                this.chosenBall.pos,
+                this.targetPos,
+                Ball.radius,
+                this.hitPower
+            );
+        }
+        requestAnimationFrame((time) => {
+            // this.ball.fpsAdjust(time - this.old_time)
+            this.oldTime = time;
+            this.run();
+        });
     }
 
     //update game state
     update() {
-        for (let ball of this.balls) {
-            ball.simulate();
-            this.checkBounds(ball);
+        let endOfMovement = true;
+        for (let i = 0; i < this.balls.length; i++) {
+            this.balls[i].simulate();
+            this.checkBounds(this.balls[i]);
+            for (let j = i + 1; j < this.balls.length; j++) {
+                this.balls[i].collide(this.balls[j]);
+            }
+            if (this.balls[i].vel !== 0) {
+                endOfMovement = false;
+            }
         }
+        if (endOfMovement) {
+            this._isWaitingForHit = true;
+        }
+    }
+
+    chooseBall(pos) {
+        for (let i = 0; i < this.balls.length; i++) {
+            let vectToBall = this.balls[i].pos.substract(pos);
+            const dist = vectToBall.getLength();
+            if (dist <= Ball.radius) {
+                this._chosenBall = this.balls[i];
+                return;
+            }
+        }
+    }
+
+    hitBall() {
+        if (!this.balls.includes(this._chosenBall) || !this._hitPower) {
+            return;
+        }
+        this._isWaitingForHit = false;
+        this._chosenBall.dir = this._targetPos.substract(this._chosenBall.pos);
+        this._chosenBall.vel = this._hitPower * 20;
+        this.view.renderCue(
+            this.chosenBall.pos,
+            this.targetPos,
+            Ball.radius,
+        );
+        this.view.fadeOutCue();
     }
 
     checkBounds(ball) {
         const pos = ball.pos;
         const dir = ball.dir;
-        console.log(Ball.radius);
 
         if (pos.x <= Ball.radius) {
             const newX = 2 * Ball.radius - pos.x;
             ball.pos = new Vector2(newX, pos.y);
             ball.dir = new Vector2(-dir.x, dir.y);
+            ball.vel *= Game.WALL_RESTITUTION;
         }
         else if (pos.x + Ball.radius >= this.tableWidth) {
             const newX = 2 * (this.tableWidth - Ball.radius) - pos.x;
             ball.pos = new Vector2(newX, pos.y);
             ball.dir = new Vector2(-dir.x, dir.y);
+            ball.vel *= Game.WALL_RESTITUTION;
         }
         if (pos.y <= Ball.radius) {
             const newY = 2 * Ball.radius - pos.y;
             ball.pos = new Vector2(pos.x, newY);
             ball.dir = new Vector2(dir.x, -dir.y);
+            ball.vel *= Game.WALL_RESTITUTION;
         }
         else if (pos.y + Ball.radius >= this.tableHeight) {
             const newY = 2 * (this.tableHeight - Ball.radius) - pos.y;
             ball.pos = new Vector2(pos.x, newY);
             ball.dir = new Vector2(dir.x, -dir.y);
+            ball.vel *= Game.WALL_RESTITUTION;
         }
+    }
+
+    set targetPos(pos) {
+        this._targetPos = pos;
+    }
+
+    get targetPos() {
+        return this._targetPos;
+    }
+    set chosenBall(ball) {
+        this._chosenBall = ball;
+    }
+
+    get chosenBall() {
+        return this._chosenBall;
+    }
+    set hitPower(power) {
+        if (power < 0) {
+            power = 0;
+        }
+        else if (power > 1) {
+            power = 1;
+        }
+        this._hitPower = power;
+    }
+
+    get hitPower() {
+        return this._hitPower;
+    }
+
+    set isWaitingForHit(bool) {
+        this._isWaitingForHit = bool;
+    }
+
+    get isWaitingForHit() {
+        return this._isWaitingForHit;
     }
 }

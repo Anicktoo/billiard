@@ -2,9 +2,9 @@ import { Vector2 } from "../utils/vector";
 
 export class Ball {
 
+    static FRICTION_KOEF = 0.04;
+    static BALL_RESTITUTION = 0.9;
     static radius;
-    static frictionKoef;
-    static restitution;
     _pos;
     _dir;
     _vel;
@@ -23,11 +23,11 @@ export class Ball {
 
     simulate() {
         this.move();
-        // this.slowDown();
+        this.slowDown();
     }
 
     slowDown() {
-        this._vel -= Ball.frictionKoef;
+        this._vel -= Ball.FRICTION_KOEF;
         if (this._vel < 0) {
             this._vel = 0;
         }
@@ -38,13 +38,36 @@ export class Ball {
     }
 
     collide(ball) {
-        let dirFromFirstToSecond = this.pos.substract(ball.pos);
-        const dist = dirFromFirstToSecond.getLength();
-        if (dist === 0.0 || dist > 2 * Ball.radius) {
+        let dirFromSecondToFirst = this.pos.substract(ball.pos);
+        const dist = dirFromSecondToFirst.getLength();
+        if (dist === 0 || dist >= 2 * Ball.radius) {
             return;
         }
 
-        dirFromFirstToSecond = dirFromFirstToSecond.scale(1 / dist);
+        dirFromSecondToFirst = dirFromSecondToFirst.getNormalized();
+
+        const correction = (2 * Ball.radius - dist) / 2;
+        this.pos = this.pos.add(dirFromSecondToFirst, correction);
+        ball.pos = ball.pos.add(dirFromSecondToFirst, -correction);
+        // dirFromSecondToFirst = this.pos.substract(ball.pos).getNormalized();
+        const velVect1 = this.dir.scale(this.vel);
+        const velVect2 = ball.dir.scale(ball.vel);
+        const vel1Projection = velVect1.dot(dirFromSecondToFirst);
+        const vel2Projection = velVect2.dot(dirFromSecondToFirst);
+
+        // const newV1 = (v1Projection * (1 - Ball.BALL_RESTITUTION) + v2Projection * (1 + Ball.BALL_RESTITUTION)) / 2;
+        // const newV2 = (v2Projection * (1 - Ball.BALL_RESTITUTION) + v1Projection * (1 + Ball.BALL_RESTITUTION)) / 2;
+
+        const newVel1Projection = (vel1Projection + vel2Projection - (vel1Projection - vel2Projection) * Ball.BALL_RESTITUTION) / 2;
+        const newVel2Projection = (vel1Projection + vel2Projection - (vel2Projection - vel1Projection) * Ball.BALL_RESTITUTION) / 2;
+
+        const newVelVect1 = velVect1.add(dirFromSecondToFirst, newVel1Projection - vel1Projection);
+        const newVelVect2 = velVect2.add(dirFromSecondToFirst, newVel2Projection - vel2Projection);
+
+        this.dir = newVelVect1.getNormalized();
+        ball.dir = newVelVect2.getNormalized();
+        this.vel = newVelVect1.getLength();
+        ball.vel = newVelVect2.getLength();
     }
 
     get pos() {
@@ -68,6 +91,10 @@ export class Ball {
         return this._vel;
     }
     set vel(vel) {
+        if (vel < 0) {
+            vel *= -1;
+            this.dir = this.dir.scale(-1);
+        }
         this._vel = vel;
     }
 }
