@@ -38,9 +38,8 @@ export class Game {
 
     initBalls() {
         this.balls = new Array(16);
-        let radius = Ball.radius;
-        let diameter = radius * 2;
-        let xShiftSize = Math.sqrt(3 * radius * radius);
+        let diameter = Ball.radius * 2;
+        let xShiftSize = Math.sqrt(3 * Ball.radius * Ball.radius);
         let x = Game.TABLE_WIDTH / 3 * 2;
         let y = Game.TABLE_HEIGHT / 2;
         let xShift = 0, yShift = 0, yInColumnShift = 0;
@@ -54,7 +53,7 @@ export class Game {
             if (i % maxInLayer === 0) {
                 maxInLayer += addition;
                 xShift += xShiftSize + 1;
-                yShift -= radius;
+                yShift -= Ball.radius;
                 yInColumnShift = 0;
                 addition++;
             }
@@ -163,6 +162,16 @@ export class Game {
             ball.dir = new Vector2(dir.x, -dir.y);
             ball.vel *= Game.WALL_RESTITUTION;
         }
+    }
+
+    restart() {
+        this.initBalls();
+        this._isWaitingForHit = true;
+        this._isFirstHit = true;
+        this.view.renderBalls(
+            this.balls.map(el => el.pos),
+            Ball.radius,
+        );
     }
 
     set targetPos(pos) {

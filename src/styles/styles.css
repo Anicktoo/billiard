@@ -1,3 +1,11 @@
+:root {
+    --width: 80vw;
+    --height: 80vh;
+    --real-width: min(var(--width), calc(var(--height) * 2));
+    --real-height: min(var(--height), calc(var(--width) / 2));
+    --button-size: calc(var(--real-height) / 10);
+}
+
 .background {
     height: 100vh;
     width: 100vw;
@@ -14,10 +22,8 @@
 
 .table {
     position: relative;
-    --width: 80vw;
-    --height: 80vh;
-    width: min(var(--width), calc(var(--height) * 2));
-    height: min(var(--height), calc(var(--width) / 2));
+    width: var(--real-width);
+    height: var(--real-height);
     background-color: rgb(21, 126, 38);
 
     /* background-image: url('../img/table.svg');
@@ -34,4 +40,48 @@
     top: 0;
     width: 100%;
     height: 100%;
+
+    image-rendering: crisp-edges;
+}
+
+.button {
+    position: absolute;
+    width: var(--button-size);
+    height: var(--button-size);
+    left: calc(var(--button-size) + var(--real-width));
+    top: 0;
+    background: url(../../src/img/restart.svg);
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    background-size: 80%;
+    background-color: rgb(51, 19, 19);
+    border-radius: 10px;
+    box-sizing: border-box;
+    cursor: pointer;
+    line-height: normal;
+    margin: 0;
+    outline: none;
+    text-align: center;
+    text-decoration: none;
+    transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    will-change: transform;
+    z-index: 1000;
+
+}
+
+.button:disabled {
+    pointer-events: none;
+}
+
+.button:hover {
+    box-shadow: rgba(0, 0, 0, 0.25) 0 8px 15px;
+    transform: translateY(-2px);
+}
+
+.button:active {
+    box-shadow: none;
+    transform: translateY(0);
 }

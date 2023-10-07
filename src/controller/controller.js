@@ -51,5 +51,9 @@ export class Controller {
             }, { once: true });
 
         });
+
+        document.getElementById('restart').addEventListener('click', () => {
+            this.model.restart()
+        });
     }
 }

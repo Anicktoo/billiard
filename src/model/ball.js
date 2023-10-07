@@ -3,7 +3,7 @@ import { Vector2 } from "../utils/vector";
 export class Ball {
 
     static FRICTION_KOEF = 0.02;
-    static BALL_RESTITUTION = 0.85;
+    static BALL_RESTITUTION = 0.8;
     static adjusted_friction_koef;
     static radius;
     _pos;
