@@ -15,28 +15,30 @@ export class View {
     tableWidth;
     tableHeight;
     initialSpace;
+    _viewToModelProportion;
 
-    constructor(canvasTable, canvasBalls, canvasCue) {
+    constructor(canvasTable, canvasBalls, canvasCue, modelTableWidth) {
         this.ctxTable = canvasTable.getContext('2d');
-        this.ctx = canvasBalls.getContext('2d');
         this.ctxCue = canvasCue.getContext('2d');
-        this.init(canvasTable, canvasCue);
+        this.ctx = canvasBalls.getContext('2d');
+        this.init(canvasTable, canvasCue, modelTableWidth);
     }
 
-    recreate(canvasTable, canvasCue) {
-        this.init(canvasTable, canvasCue);
+    recreate(canvasTable, canvasCue, modelTableWidth) {
+        this.init(canvasTable, canvasCue, modelTableWidth);
     }
 
-    init(canvasTable, canvasCue) {
+    init(canvasTable, canvasCue, modelTableWidth) {
         this.width = canvasCue.width;
         this.height = canvasCue.height;
         this.tableWidth = canvasTable.width;
         this.tableHeight = canvasTable.height;
+        this._viewToModelProportion = this.tableWidth / modelTableWidth;
         this.tablePos = new Vector2(canvasTable.getBoundingClientRect().left, canvasTable.getBoundingClientRect().top);
         this.cueLength = this.tableHeight;
         this.cueWidth = this.cueLength / 64;
         this.initialSpace = this.cueWidth;
-        this.maxSpace = this.initialSpace * 10;
+        this.maxSpace = this.initialSpace * 20;
         this.renderTable();
     }
 
@@ -48,15 +50,18 @@ export class View {
 
     //render balls elements
     renderBalls(ballsPositions, radius) {
+        radius *= this._viewToModelProportion;
         this.ctx.clearRect(0, 0, this.tableWidth, this.tableHeight);
         this.ctx.fillStyle = View.MAIN_BALL_COLLOR;
-        const { x, y } = ballsPositions[0];
+
+        const { x, y } = ballsPositions[0].scale(this._viewToModelProportion);
         this.ctx.beginPath();
         this.ctx.arc(x, y, radius, 0, Math.PI * 2, false);
         this.ctx.fill();
         this.ctx.fillStyle = View.BALL_COLOR;
+
         for (let i = 1; i < ballsPositions.length; i++) {
-            const { x, y } = ballsPositions[i];
+            const { x, y } = ballsPositions[i].scale(this._viewToModelProportion);
             this.ctx.beginPath();
             this.ctx.arc(x, y, radius, 0, Math.PI * 2, false);
             this.ctx.fill();
@@ -64,17 +69,14 @@ export class View {
     }
 
     renderCue(ballPosition, targetPosition, ballRadius, cueShift = 0) {
+        ballPosition = ballPosition.scale(this._viewToModelProportion);
+        targetPosition = targetPosition.scale(this._viewToModelProportion);
+        ballRadius *= this._viewToModelProportion;
+        cueShift *= this._viewToModelProportion;
+
         this.ctxCue.clearRect(0, 0, this.width, this.height);
         const dir = ballPosition.substract(targetPosition).getNormalized();
-        // console.log(ballPosition, targetPosition, dir);
-        // const ortDir = new Vector2(-dir.x, dir.y)
-
-        // const cueLeftTop = ballPosition.add(dir, ballRadius + this.initialSpace).add(ortDir, this.cueWidth/2);
-        // const cueRightTop = cueLeftTop.add(ortDir, -this.cueWidth);
-        // const cueRightBottom = cueRightTop.add(dir, this.cueLength);
-        // const cueLeftBottom = cueRightBottom.add(ortDir, this.cueWidth);
-        // console.log(this.tablePos);
-        const cueTop = ballPosition.add(this.tablePos).add(dir, ballRadius + this.initialSpace + cueShift * 100);
+        const cueTop = ballPosition.add(this.tablePos).add(dir, ballRadius + this.initialSpace + cueShift * this.maxSpace);
         const cueBottom = cueTop.add(dir, this.cueLength);
 
         this.ctxCue.globalCompositeOperation = 'source-over';
@@ -99,5 +101,9 @@ export class View {
         else {
             this.ctxCue.clearRect(0, 0, this.width, this.height);
         }
+    }
+
+    get viewToModelProportion() {
+        return this._viewToModelProportion;
     }
 }

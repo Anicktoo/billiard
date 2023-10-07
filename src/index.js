@@ -9,9 +9,9 @@ const canvasTable = document.getElementById('canvas-table');
 const canvasBalls = document.getElementById('canvas-balls');
 const canvasCue = document.getElementById('canvas-cue');
 
-const canvasWidth = canvasTable.getBoundingClientRect().width;
-const canvasHeight = canvasTable.getBoundingClientRect().height;
-const ballRadius = canvasWidth / 64;
+const canvasRect = canvasTable.getBoundingClientRect();
+const canvasWidth = canvasRect.width;
+const canvasHeight = canvasRect.height;
 
 canvasTable.width = canvasWidth;
 canvasTable.height = canvasHeight;
@@ -20,9 +20,9 @@ canvasBalls.height = canvasHeight;
 canvasCue.width = window.innerWidth;
 canvasCue.height = window.innerHeight;
 
-const view = new View(canvasTable, canvasBalls, canvasCue);
-const game = new Game(view, canvasWidth, canvasHeight, ballRadius);
-const controller = new Controller(game, canvasTable);
+const view = new View(canvasTable, canvasBalls, canvasCue, Game.TABLE_WIDTH);
+const game = new Game(view);
+const controller = new Controller(game, canvasRect, view.viewToModelProportion);
 
 game.run();
 

@@ -2,8 +2,9 @@ import { Vector2 } from "../utils/vector";
 
 export class Ball {
 
-    static FRICTION_KOEF = 0.04;
-    static BALL_RESTITUTION = 0.9;
+    static FRICTION_KOEF = 0.02;
+    static BALL_RESTITUTION = 0.85;
+    static adjusted_friction_koef;
     static radius;
     _pos;
     _dir;
@@ -49,14 +50,10 @@ export class Ball {
         const correction = (2 * Ball.radius - dist) / 2;
         this.pos = this.pos.add(dirFromSecondToFirst, correction);
         ball.pos = ball.pos.add(dirFromSecondToFirst, -correction);
-        // dirFromSecondToFirst = this.pos.substract(ball.pos).getNormalized();
         const velVect1 = this.dir.scale(this.vel);
         const velVect2 = ball.dir.scale(ball.vel);
         const vel1Projection = velVect1.dot(dirFromSecondToFirst);
         const vel2Projection = velVect2.dot(dirFromSecondToFirst);
-
-        // const newV1 = (v1Projection * (1 - Ball.BALL_RESTITUTION) + v2Projection * (1 + Ball.BALL_RESTITUTION)) / 2;
-        // const newV2 = (v2Projection * (1 - Ball.BALL_RESTITUTION) + v1Projection * (1 + Ball.BALL_RESTITUTION)) / 2;
 
         const newVel1Projection = (vel1Projection + vel2Projection - (vel1Projection - vel2Projection) * Ball.BALL_RESTITUTION) / 2;
         const newVel2Projection = (vel1Projection + vel2Projection - (vel2Projection - vel1Projection) * Ball.BALL_RESTITUTION) / 2;

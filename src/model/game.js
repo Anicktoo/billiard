@@ -4,7 +4,11 @@ import { Vector2 } from "../utils/vector";
 
 export class Game {
 
-    static WALL_RESTITUTION = 0.75;
+    static TABLE_WIDTH = 2048;
+    static TABLE_HEIGHT = 1024;
+    static WALL_RESTITUTION = 0.65;
+    static MAX_HIT_POWER = 30;
+    static BALL_RADIUS = 20;
 
     cue;
     view;
@@ -12,19 +16,15 @@ export class Game {
     oldTime;
     _hitPower;
     _targetPos;
-    tableWidth;
     _chosenBall;
-    tableHeight;
     _isFirstHit;
     _isWaitingForHit;
 
 
-    constructor(view, tableWidth, tableHeight, ballRadius) {
+    constructor(view) {
         this.view = view;
-        this.tableWidth = tableWidth;
-        this.tableHeight = tableHeight;
         this.cue = new Cue();
-        Ball.radius = ballRadius;
+        Ball.radius = Game.BALL_RADIUS;
         this.initBalls();
         this.oldTime = 0;
         this._isWaitingForHit = true;
@@ -41,12 +41,12 @@ export class Game {
         let radius = Ball.radius;
         let diameter = radius * 2;
         let xShiftSize = Math.sqrt(3 * radius * radius);
-        let x = this.tableWidth / 3 * 2;
-        let y = this.tableHeight / 2 - radius;
+        let x = Game.TABLE_WIDTH / 3 * 2;
+        let y = Game.TABLE_HEIGHT / 2;
         let xShift = 0, yShift = 0, yInColumnShift = 0;
         let maxInLayer = 1;
         let addition = 2;
-        this.balls[0] = new Ball(new Vector2(this.tableWidth / 3, y));
+        this.balls[0] = new Ball(new Vector2(Game.TABLE_WIDTH / 4, y));
         this.chosenBall = this.balls[0];
         for (let i = 1; i < 16; i++) {
             this.balls[i] = new Ball(new Vector2(x + xShift, y + yShift + yInColumnShift));
@@ -89,8 +89,8 @@ export class Game {
     update() {
         let endOfMovement = true;
         for (let i = 0; i < this.balls.length; i++) {
-            this.balls[i].simulate();
             this.checkBounds(this.balls[i]);
+            this.balls[i].simulate();
             for (let j = i + 1; j < this.balls.length; j++) {
                 this.balls[i].collide(this.balls[j]);
             }
@@ -118,13 +118,15 @@ export class Game {
     }
 
     hitBall() {
-        if (!this.balls.includes(this._chosenBall) || !this._hitPower) {
+        if (!this.balls.includes(this._chosenBall) || this._hitPower < 0.1) {
             return;
         }
         this._isWaitingForHit = false;
         this._isFirstHit = false;
         this._chosenBall.dir = this._targetPos.substract(this._chosenBall.pos);
-        this._chosenBall.vel = this._hitPower * 20;
+        this._chosenBall.vel = this._hitPower * Game.MAX_HIT_POWER;
+        console.log('model hit power: ' + this._chosenBall.vel);
+
         this.view.renderCue(
             this.chosenBall.pos,
             this.targetPos,
@@ -143,8 +145,8 @@ export class Game {
             ball.dir = new Vector2(-dir.x, dir.y);
             ball.vel *= Game.WALL_RESTITUTION;
         }
-        else if (pos.x + Ball.radius >= this.tableWidth) {
-            const newX = 2 * (this.tableWidth - Ball.radius) - pos.x;
+        else if (pos.x + Ball.radius >= Game.TABLE_WIDTH) {
+            const newX = 2 * (Game.TABLE_WIDTH - Ball.radius) - pos.x;
             ball.pos = new Vector2(newX, pos.y);
             ball.dir = new Vector2(-dir.x, dir.y);
             ball.vel *= Game.WALL_RESTITUTION;
@@ -155,8 +157,8 @@ export class Game {
             ball.dir = new Vector2(dir.x, -dir.y);
             ball.vel *= Game.WALL_RESTITUTION;
         }
-        else if (pos.y + Ball.radius >= this.tableHeight) {
-            const newY = 2 * (this.tableHeight - Ball.radius) - pos.y;
+        else if (pos.y + Ball.radius >= Game.TABLE_HEIGHT) {
+            const newY = 2 * (Game.TABLE_HEIGHT - Ball.radius) - pos.y;
             ball.pos = new Vector2(pos.x, newY);
             ball.dir = new Vector2(dir.x, -dir.y);
             ball.vel *= Game.WALL_RESTITUTION;
@@ -198,4 +200,9 @@ export class Game {
     get isWaitingForHit() {
         return this._isWaitingForHit;
     }
+
+    get canvasAdjKoef() {
+        return this._canvasAdjKoef;
+    }
+
 }
