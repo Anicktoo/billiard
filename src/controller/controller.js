@@ -25,7 +25,7 @@ export class Controller {
 
             if (pressPos) {
                 shiftVector = curPos.substract(pressPos);
-                this.model.hitPower = 2 * dirToBall.dot(shiftVector) / this.canvasRect.width;
+                this.model.hitPower = 4 * dirToBall.dot(shiftVector) / this.canvasRect.width;
             }
             else {
                 shiftVector = null;

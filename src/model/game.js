@@ -7,7 +7,7 @@ export class Game {
     static TABLE_WIDTH = 2048;
     static TABLE_HEIGHT = 1024;
     static WALL_RESTITUTION = 0.65;
-    static MAX_HIT_POWER = 30;
+    static MAX_HIT_POWER = 35;
     static BALL_RADIUS = 20;
 
     cue;

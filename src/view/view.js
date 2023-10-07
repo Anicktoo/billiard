@@ -38,7 +38,7 @@ export class View {
         this.cueLength = this.tableHeight;
         this.cueWidth = this.cueLength / 64;
         this.initialSpace = this.cueWidth;
-        this.maxSpace = this.initialSpace * 20;
+        this.maxSpace = this.initialSpace * 30;
         this.renderTable();
     }
 
