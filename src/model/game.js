@@ -171,6 +171,10 @@ export class Game {
             for (let pocket of this._pockets) {
                 if (this.checkPocket(pocket, curBall)) {
                     this._balls.splice(i, 1);
+                    if (!this._balls) {
+                        this.endGame();
+                        return;
+                    }
                     if (this._chosenBall === curBall) {
                         this._chosenBall = this._balls[0];
                     }
@@ -184,8 +188,13 @@ export class Game {
             }
         }
 
+
         if (endOfMovement) {
             this._isWaitingForHit = true;
+            if (this._balls.length < 2) {
+                this.endGame();
+                return;
+            }
         }
     }
 
@@ -225,6 +234,10 @@ export class Game {
 
     checkPocket(pocket, ball) {
         return ball.pos.substract(pocket).getLength() < Game.POCKET_RADIUS;
+    }
+
+    endGame() {
+        this.restart();
     }
 
     restart() {
