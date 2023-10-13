@@ -1,11 +1,15 @@
 export class Vector2 {
+
+    _x;
+    _y;
+
     constructor(x, y) {
-        this.x = x;
-        this.y = y;
+        this._x = x;
+        this._y = y;
     }
 
     getLength() {
-        return Math.sqrt(this.x * this.x + this.y * this.y);
+        return Math.sqrt(this._x * this._x + this._y * this._y);
     }
 
     isNormal() {
@@ -17,31 +21,44 @@ export class Vector2 {
         if (!length) {
             return new Vector2(0, 0);
         }
-        const newX = this.x / length;
-        const newY = this.y / length;
+        const newX = this._x / length;
+        const newY = this._y / length;
         return new Vector2(newX, newY);
     }
 
     add(v, k = 1) {
         return new Vector2(
-            this.x + v.x * k,
-            this.y + v.y * k);
+            this._x + v.x * k,
+            this._y + v.y * k);
     }
 
     substract(v2) {
-        return new Vector2(this.x - v2.x, this.y - v2.y);
+        return new Vector2(this._x - v2.x, this._y - v2.y);
     }
 
     scale(k) {
-        return new Vector2(this.x * k, this.y * k);
+        return new Vector2(this._x * k, this._y * k);
     }
 
     dot(v) {
-        return this.x * v.x + this.y * v.y;
+        return this._x * v.x + this._y * v.y;
     }
 
     isZero() {
-        return this.x === 0 && this.y === 0;
+        return this._x === 0 && this._y === 0;
     }
 
+    get x() {
+        return this._x;
+    }
+    set x(value) {
+        this._x = value;
+    }
+
+    get y() {
+        return this._y;
+    }
+    set y(value) {
+        this._y = value;
+    }
 }

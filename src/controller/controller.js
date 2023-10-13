@@ -2,58 +2,62 @@ import { Vector2 } from "../utils/vector";
 
 export class Controller {
 
-    model;
-    canvasRect;
-    modelToControlProportion;
+    static HIT_POWER_TRASHOLD = 0.05;
+    _model;
+    _canvasRect;
+    _modelToControlProportion;
 
 
     constructor(model, canvasRect, viewToModelProportion) {
-        this.model = model;
-        this.canvasRect = canvasRect;
-        this.modelToControlProportion = 1 / viewToModelProportion;
+        this._model = model;
+        this._canvasRect = canvasRect;
+        this._modelToControlProportion = 1 / viewToModelProportion;
         this.initMouseControl();
     }
 
     initMouseControl() {
-
         let pressPos = null;
         let dirToBall;
-        let shiftVector;
+        let shiftVector = new Vector2(0, 0);
 
         window.addEventListener('mousemove', (e) => {
-            const curPos = new Vector2(e.clientX - this.canvasRect.x, e.clientY - this.canvasRect.y);
+            const curPos = new Vector2(e.clientX - this._canvasRect.x, e.clientY - this._canvasRect.y);
 
             if (pressPos) {
                 shiftVector = curPos.substract(pressPos);
-                this.model.hitPower = 4 * dirToBall.dot(shiftVector) / this.canvasRect.width;
+                this._model.hitPower = 4 * this._modelToControlProportion * dirToBall.dot(shiftVector) / this._canvasRect.width;
             }
             else {
-                shiftVector = null;
-                this.model.targetPos = curPos.scale(this.modelToControlProportion);
+                shiftVector = new Vector2(0, 0);
+                this._model.targetPos = curPos.scale(this._modelToControlProportion);
             }
         });
+
         window.addEventListener('mousedown', (e) => {
-            if (!this.model.isWaitingForHit) {
+            if (!this._model.isWaitingForHit) {
                 return;
             }
-            pressPos = new Vector2(e.clientX - this.canvasRect.x, e.clientY - this.canvasRect.y);
-            dirToBall = this.model.chosenBall.pos.scale(1 / this.modelToControlProportion).substract(pressPos).getNormalized();
+            pressPos = new Vector2(e.clientX - this._canvasRect.x, e.clientY - this._canvasRect.y);
+            dirToBall = this._model.chosenBall.pos
+                .scale(1 / this._modelToControlProportion)
+                .substract(pressPos)
+                .getNormalized();
             window.addEventListener('mouseup', () => {
-                if (!shiftVector) {
-                    this.model.chooseBall(pressPos.scale(this.modelToControlProportion));
+                console.log('control hit power: ' + this._model.hitPower);
+                if (this._model.hitPower < Controller.HIT_POWER_TRASHOLD) {
+                    this._model.chooseBall(pressPos.scale(this._modelToControlProportion));
                 }
                 else {
-                    console.log('control hit power: ' + this.model.hitPower);
-                    this.model.hitBall();
-                    this.model.hitPower = 0;
+                    this._model.hitBall();
                 }
+                this._model.hitPower = 0;
                 pressPos = null;
             }, { once: true });
 
         });
 
         document.getElementById('restart').addEventListener('click', () => {
-            this.model.restart()
+            this._model.restart()
         });
     }
 }

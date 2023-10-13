@@ -2,24 +2,22 @@ import { Vector2 } from "../utils/vector";
 
 export class Ball {
 
-    static FRICTION_KOEF = 0.02;
-    static BALL_RESTITUTION = 0.9;
+    static FRICTION_KOEF = 0.03;
+    static RESTITUTION = 0.85;
     static adjusted_friction_koef;
     static radius;
     _pos;
     _dir;
     _vel;
+    _type;
 
-    constructor(position) {
+
+    constructor(position, type = 'ordinary') {
         this._pos = position;
         this._dir = new Vector2(0, 0);
         this._vel = 0;
-    }
-
-    set(position, dir, vel) {
-        this.pos = position;
-        this.dir = dir;
-        this.vel = vel;
+        this._removed = false;
+        this._type = type;
     }
 
     simulate() {
@@ -55,8 +53,8 @@ export class Ball {
         const vel1Projection = velVect1.dot(dirFromSecondToFirst);
         const vel2Projection = velVect2.dot(dirFromSecondToFirst);
 
-        const newVel1Projection = (vel1Projection + vel2Projection - (vel1Projection - vel2Projection) * Ball.BALL_RESTITUTION) / 2;
-        const newVel2Projection = (vel1Projection + vel2Projection - (vel2Projection - vel1Projection) * Ball.BALL_RESTITUTION) / 2;
+        const newVel1Projection = (vel1Projection + vel2Projection - (vel1Projection - vel2Projection) * Ball.RESTITUTION) / 2;
+        const newVel2Projection = (vel1Projection + vel2Projection - (vel2Projection - vel1Projection) * Ball.RESTITUTION) / 2;
 
         const newVelVect1 = velVect1.add(dirFromSecondToFirst, newVel1Projection - vel1Projection);
         const newVelVect2 = velVect2.add(dirFromSecondToFirst, newVel2Projection - vel2Projection);
@@ -67,12 +65,17 @@ export class Ball {
         ball.vel = newVelVect2.getLength();
     }
 
+    isInPocket(pocketPos, pocketRadius) {
+        return (this._pos.substract(pocketPos).getLength() <= pocketRadius);
+    }
+
     get pos() {
         return this._pos;
     }
     set pos(pos) {
         this._pos = pos;
     }
+
     get dir() {
         return this._dir;
     }
@@ -84,6 +87,7 @@ export class Ball {
             this._dir = dir;
         }
     }
+
     get vel() {
         return this._vel;
     }
@@ -93,5 +97,12 @@ export class Ball {
             this.dir = this.dir.scale(-1);
         }
         this._vel = vel;
+    }
+
+    get type() {
+        return this._type;
+    }
+    set type(value) {
+        this._type = value;
     }
 }
