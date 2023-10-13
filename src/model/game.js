@@ -123,6 +123,7 @@ export class Game {
 
     //update game state, render, request new frame
     run() {
+        //ball moving phase
         if (!this._isWaitingForHit) {
             this.update();
             this._view.renderBalls(
@@ -130,7 +131,9 @@ export class Game {
                 Ball.radius,
             );
         }
+        //hitting phase
         else {
+            this._view.fadeOutStop();
             this._view.renderCue(
                 this.chosenBall.pos,
                 this.targetPos,
@@ -229,7 +232,7 @@ export class Game {
         this._isWaitingForHit = true;
         this._isFirstHit = true;
         this._view.renderBalls(
-            this._balls.map(el => el.pos),
+            this._balls,
             Ball.radius,
         );
     }

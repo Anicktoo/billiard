@@ -15,6 +15,7 @@ export class View {
     _cueWidth;
     _maxSpace;
     _ctxTable;
+    _fadeStop;
     _cueLength;
     _tableWidth;
     _tableHeight;
@@ -114,17 +115,29 @@ export class View {
 
     }
 
-    fadeOutCue(visible = 1) {
+    fadeOutCue(firstCall = true, visible = 1) {
+        if (firstCall) {
+            this._fadeStop = false;
+        }
         visible -= 0.01;
         this._ctxCue.globalCompositeOperation = 'destination-in';
         this._ctxCue.fillStyle = `rgba(255, 255, 255, ${visible})`;
         this._ctxCue.fillRect(0, 0, this._cueSpaceWidth, this._cueSpaceHeight);
         if (visible > 0) {
-            requestAnimationFrame(this.fadeOutCue.bind(this, visible));
+            if (!this._fadeStop) {
+                requestAnimationFrame(this.fadeOutCue.bind(this, false, visible));
+            }
+            else {
+                this._fadeStop = false;
+            }
         }
         else {
             this._ctxCue.clearRect(0, 0, this._cueSpaceWidth, this._cueSpaceHeight);
         }
+    }
+
+    fadeOutStop() {
+        this._fadeStop = true;
     }
 
     get viewToModelProportion() {
