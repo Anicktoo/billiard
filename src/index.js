@@ -22,8 +22,6 @@ canvasCue.height = window.innerHeight;
 
 const view = new View(canvasTable, canvasBalls, canvasCue, Game.TABLE_WIDTH);
 const game = new Game(view);
-const controller = new Controller(game, canvasRect, view.viewToModelProportion);
+new Controller(game, canvasRect, view.viewToModelProportion);
 
-game.run();
-
-controller;
+game.start();

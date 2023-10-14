@@ -2,7 +2,7 @@ import { Vector2 } from "../utils/vector";
 
 export class Block {
 
-    static RESTITUTION = 0.65;
+    static RESTITUTION = 0.7;
     _x;
     _y;
     _width;

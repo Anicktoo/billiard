@@ -2,7 +2,13 @@
     "rules": {
         "no-unused-vars": "warn",
         "no-undef": "warn",
-        "no-useless-escape": "warn"
+        "no-useless-escape": "warn",
+        "no-constant-condition": [
+            "warn",
+            {
+                "checkLoops": false
+            }
+        ]
     },
     "env": {
         "browser": true,

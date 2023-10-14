@@ -5,19 +5,19 @@ import { Block } from './block';
 
 export class Game {
 
+    static WALL_WIDTH = 80;
+    static BALL_RADIUS = 25;
     static TABLE_WIDTH = 2048;
     static TABLE_HEIGHT = 1024;
-    static POCKET_RADIUS = 40;
-    static WALL_WIDTH = 80;
-    static WALL_RESTITUTION = 0.65;
+    static INTENDED_FPS = 60;
     static MAX_HIT_POWER = 30;
-    static BALL_RADIUS = 25;
+    static POCKET_RADIUS = 40;
+    static WALL_RESTITUTION = 0.65;
 
     _view;
     _balls;
     _walls;
     _pockets;
-    _oldTime;
     _hitPower;
     _targetPos;
     _chosenBall;
@@ -29,14 +29,13 @@ export class Game {
         this._view = view;
         Ball.radius = Game.BALL_RADIUS;
         this._oldTime = 0;
+        this._fpsAdhustKoef = 1;
         this._isWaitingForHit = true;
         this._isFirstHit = true;
         this._targetPos = new Vector2(0, 0);
-
         this.initPockets();
         this.initWalls();
         this.initBalls();
-
         this._view.renderTable();
         this._view.renderPockets(
             this._pockets,
@@ -51,7 +50,6 @@ export class Game {
             this._balls,
             Ball.radius,
         );
-
         // this.testingStart();
     }
 
@@ -109,19 +107,33 @@ export class Game {
         const tWidth = Game.TABLE_WIDTH;
         const tHeight = Game.TABLE_HEIGHT;
         const wallWidth = Game.WALL_WIDTH;
-        // const pocketSideShift = Math.sqrt(pR * pR / 2);
         this._pockets = [];
-
         this._pockets[0] = new Vector2(wallWidth, wallWidth);
         this._pockets[1] = new Vector2(tWidth / 2, wallWidth - pR);
         this._pockets[2] = new Vector2(tWidth - wallWidth, wallWidth);
         this._pockets[3] = new Vector2(tWidth - wallWidth, tHeight - wallWidth);
         this._pockets[4] = new Vector2(tWidth / 2, tHeight - wallWidth + pR);
         this._pockets[5] = new Vector2(wallWidth, tHeight - wallWidth);
-
     }
 
-    //update game state, render, request new frame
+    //start game and adjust fps
+    async start() {
+        let then = performance.now();
+        const interval = 1000 / Game.INTENDED_FPS;
+        let delta = 0;
+        while (true) {
+            let now = await new Promise(requestAnimationFrame);
+            if (now - then < interval - delta) {
+                continue;
+            }
+            delta = Math.min(interval, delta + now - then - interval);
+            then = now;
+
+            this.run();
+        }
+    }
+
+    //update game state and render
     run() {
         //ball moving phase
         if (!this._isWaitingForHit) {
@@ -141,11 +153,6 @@ export class Game {
                 this.hitPower
             );
         }
-        requestAnimationFrame((time) => {
-            // this.ball.fpsAdjust(time - this.old_time)
-            this._oldTime = time;
-            this.run();
-        });
     }
 
     //update game state
@@ -154,11 +161,9 @@ export class Game {
         let curBall;
 
         out: for (let i = 0; i < this._balls.length; i++) {
-
             curBall = this._balls[i];
 
             for (let j = i + 1; j < this._balls.length; j++) {
-
                 curBall.collide(this._balls[j]);
             }
 
@@ -221,6 +226,7 @@ export class Game {
         this._isFirstHit = false;
         this._chosenBall.dir = this._targetPos.substract(this._chosenBall.pos);
         this._chosenBall.vel = this._hitPower * Game.MAX_HIT_POWER;
+
         console.log('model hit power: ' + this._chosenBall.vel);
 
         this._view.renderCue(
