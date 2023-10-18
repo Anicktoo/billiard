@@ -5,22 +5,29 @@ export class Controller {
     static HIT_POWER_TRASHOLD = 0.05;
     _model;
     _canvasRect;
+    _mouseMoveFunction;
+    _mouseDownFunction;
     _modelToControlProportion;
 
-
-    constructor(model, canvasRect, viewToModelProportion) {
+    constructor(model, canvas, viewToModelProportion) {
         this._model = model;
-        this._canvasRect = canvasRect;
+        this._canvasRect = canvas.getBoundingClientRect();
         this._modelToControlProportion = 1 / viewToModelProportion;
         this.initMouseControl();
     }
 
+    resizeInit(canvas, viewToModelProportion) {
+        this._canvasRect = canvas.getBoundingClientRect();
+        this._modelToControlProportion = 1 / viewToModelProportion;
+    }
+
     initMouseControl() {
+
         let pressPos = null;
         let dirToBall;
         let shiftVector = new Vector2(0, 0);
 
-        window.addEventListener('mousemove', (e) => {
+        const mouseMoveFunction = (e) => {
             const curPos = new Vector2(e.clientX - this._canvasRect.x, e.clientY - this._canvasRect.y);
 
             if (pressPos) {
@@ -31,9 +38,9 @@ export class Controller {
                 shiftVector = new Vector2(0, 0);
                 this._model.targetPos = curPos.scale(this._modelToControlProportion);
             }
-        });
+        };
 
-        window.addEventListener('mousedown', (e) => {
+        const mouseDownFunction = (e) => {
             if (!this._model.isWaitingForHit) {
                 return;
             }
@@ -54,10 +61,24 @@ export class Controller {
                 pressPos = null;
             }, { once: true });
 
-        });
+        };
+
+        window.addEventListener('mousemove', mouseMoveFunction);
+        window.addEventListener('mousedown', mouseDownFunction);
+
+        // this._mouseMoveFunction = mouseMoveFunction;
+        // this._mouseDownFunction = mouseDownFunction;
 
         document.getElementById('restart').addEventListener('click', () => {
             this._model.restart()
         });
+    }
+
+    mouseMoveFunction() {
+
+    }
+
+    mouseDownFunction() {
+
     }
 }

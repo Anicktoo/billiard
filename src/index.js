@@ -9,24 +9,37 @@ const canvasTable = document.getElementById('canvas-table');
 const canvasBalls = document.getElementById('canvas-balls');
 const canvasCue = document.getElementById('canvas-cue');
 
-const canvasRect = canvasTable.getBoundingClientRect();
-const canvasWidth = canvasRect.width;
-const canvasHeight = canvasRect.height;
+let view;
+let model;
+let controller;
 
-canvasTable.width = canvasWidth;
-canvasTable.height = canvasHeight;
-canvasBalls.width = canvasWidth;
-canvasBalls.height = canvasHeight;
-canvasCue.width = window.innerWidth;
-canvasCue.height = window.innerHeight;
+const setCanvasSizes = function () {
+    const canvasRect = canvasTable.getBoundingClientRect();
+    const canvasWidth = canvasRect.width;
+    const canvasHeight = canvasRect.height;
 
+    canvasTable.width = canvasWidth;
+    canvasTable.height = canvasHeight;
+    canvasBalls.width = canvasWidth;
+    canvasBalls.height = canvasHeight;
+    canvasCue.width = window.innerWidth;
+    canvasCue.height = window.innerHeight;
+}
 
-(async function loadAndStart() {
-    const view = new View(canvasTable, canvasBalls, canvasCue);
+const loadAndStart = async function () {
+    setCanvasSizes();
+    view = new View(canvasTable, canvasBalls, canvasCue);
     await view.init(canvasTable, canvasCue, Game.TABLE_WIDTH);
+    model = new Game(view);
+    controller = new Controller(model, canvasTable, view.viewToModelProportion);
+    model.start();
+}
 
-    const game = new Game(view);
-    new Controller(game, canvasRect, view.viewToModelProportion);
+window.addEventListener('resize', async () => {
+    setCanvasSizes();
+    await view.init(canvasTable, canvasCue, Game.TABLE_WIDTH);
+    model.renderGame();
+    controller.resizeInit(canvasTable, view.viewToModelProportion);
+});
 
-    game.start();
-})();
+loadAndStart();

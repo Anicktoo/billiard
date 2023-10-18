@@ -1,5 +1,4 @@
 import { Ball } from './ball';
-// import { Block } from './block';
 import { Vector2 } from '../utils/vector';
 import { Block } from './block';
 
@@ -34,10 +33,16 @@ export class Game {
         this._fpsAdhustKoef = 1;
         this._isWaitingForHit = true;
         this._isFirstHit = true;
+        this._hitPower = 0;
         this._targetPos = new Vector2(0, 0);
         this.initPockets();
         this.initWalls();
         this.initBalls();
+        this.renderGame();
+        // this.testingStart();
+    }
+
+    renderGame() {
         this._view.renderTable(Game.POCKET_RADIUS);
         this._view.renderWalls(
             this._walls,
@@ -54,7 +59,6 @@ export class Game {
             this._balls,
             Ball.radius,
         );
-        // this.testingStart();
     }
 
     //testing method
@@ -276,11 +280,13 @@ export class Game {
         this.initBalls();
         this._isWaitingForHit = true;
         this._isFirstHit = true;
+        this._hitPower = 0;
         this._view.renderBalls(
             this._balls,
             Ball.radius,
         );
     }
+
 
     set targetPos(value) {
         this._targetPos = value;
