@@ -6,13 +6,14 @@ import { Block } from './block';
 export class Game {
 
     static WALL_WIDTH = 80;
-    static BALL_RADIUS = 25;
+    static BALL_RADIUS = 20;
     static TABLE_WIDTH = 2048;
     static TABLE_HEIGHT = 1024;
     static INTENDED_FPS = 60;
     static MAX_HIT_POWER = 30;
-    static POCKET_RADIUS = 40;
+    static POCKET_RADIUS = 35;
     static WALL_RESTITUTION = 0.65;
+    static POCKET_SHIFT_KOEF = 0.5;
 
     _view;
     _balls;
@@ -26,6 +27,7 @@ export class Game {
 
 
     constructor(view) {
+        console.log('game');
         this._view = view;
         Ball.radius = Game.BALL_RADIUS;
         this._oldTime = 0;
@@ -36,15 +38,17 @@ export class Game {
         this.initPockets();
         this.initWalls();
         this.initBalls();
-        this._view.renderTable();
+        this._view.renderTable(Game.POCKET_RADIUS);
+        this._view.renderWalls(
+            this._walls,
+            Game.POCKET_RADIUS,
+            Game.WALL_WIDTH
+        );
         this._view.renderPockets(
             this._pockets,
-            Game.POCKET_RADIUS
-        );
-        this._view.renderWalls(
-            this._walls.map(el => {
-                return { x: el.x, y: el.y, width: el.width, height: el.height }
-            })
+            Game.POCKET_RADIUS,
+            Game.WALL_WIDTH,
+            Game.POCKET_SHIFT_KOEF
         );
         this._view.renderBalls(
             this._balls,
@@ -85,35 +89,57 @@ export class Game {
     }
 
     initWalls() {
-        const pWidth = Game.POCKET_RADIUS * 2;
+        const pRadius = Game.POCKET_RADIUS;
+        const pWidth = pRadius * 2;
         const tWidth = Game.TABLE_WIDTH;
         const tHeight = Game.TABLE_HEIGHT;
         const wallWidth = Game.WALL_WIDTH;
+        const cornerWallWidth = 2 * wallWidth;
         const pocketSideShift = Math.sqrt(pWidth * pWidth / 2) + wallWidth;
         const horWallLength = (tWidth - pWidth - 2 * pocketSideShift) / 2;
         const vertWallLength = (tHeight - 2 * pocketSideShift);
         const secondRowXStart = pocketSideShift + horWallLength + pWidth;
-        this._walls = new Array(6);
+        this._walls = [];
+        //two upper walls
         this._walls[0] = new Block(pocketSideShift, 0, horWallLength, wallWidth);
         this._walls[1] = new Block(secondRowXStart, 0, horWallLength, wallWidth);
+        //two bottom walls
         this._walls[2] = new Block(pocketSideShift, tHeight - wallWidth, horWallLength, wallWidth);
         this._walls[3] = new Block(secondRowXStart, tHeight - wallWidth, horWallLength, wallWidth);
+        //left wall
         this._walls[4] = new Block(0, pocketSideShift, wallWidth, vertWallLength);
+        //right wall
         this._walls[5] = new Block(tWidth - wallWidth, pocketSideShift, wallWidth, vertWallLength);
+
+        //additional corner walls
+        //from top left corner (most left triangle) clockwise for each side
+        this._walls[6] = new Block(wallWidth, pocketSideShift, cornerWallWidth, cornerWallWidth, Math.PI * 3 / 4);
+        this._walls[7] = new Block(pocketSideShift, wallWidth, cornerWallWidth, cornerWallWidth, -Math.PI * 3 / 4);
+
+        this._walls[8] = new Block(tWidth - wallWidth, pocketSideShift, cornerWallWidth, cornerWallWidth, -Math.PI / 4);
+        this._walls[9] = new Block(tWidth - pocketSideShift, wallWidth, cornerWallWidth, cornerWallWidth, -Math.PI * 3 / 4);
+
+        this._walls[10] = new Block(tWidth - wallWidth, tHeight - pocketSideShift, cornerWallWidth, cornerWallWidth, -Math.PI / 4);
+        this._walls[11] = new Block(tWidth - pocketSideShift, tHeight - wallWidth, cornerWallWidth, cornerWallWidth, Math.PI / 4);
+
+        this._walls[12] = new Block(wallWidth, tHeight - pocketSideShift, cornerWallWidth, cornerWallWidth, Math.PI * 3 / 4);
+        this._walls[13] = new Block(pocketSideShift, tHeight - wallWidth, cornerWallWidth, cornerWallWidth, Math.PI / 4);
     }
 
     initPockets() {
         const pR = Game.POCKET_RADIUS;
+        const pocketCenterShift = pR * (1 + Game.POCKET_SHIFT_KOEF);
         const tWidth = Game.TABLE_WIDTH;
         const tHeight = Game.TABLE_HEIGHT;
-        const wallWidth = Game.WALL_WIDTH;
         this._pockets = [];
-        this._pockets[0] = new Vector2(wallWidth, wallWidth);
-        this._pockets[1] = new Vector2(tWidth / 2, wallWidth - pR);
-        this._pockets[2] = new Vector2(tWidth - wallWidth, wallWidth);
-        this._pockets[3] = new Vector2(tWidth - wallWidth, tHeight - wallWidth);
-        this._pockets[4] = new Vector2(tWidth / 2, tHeight - wallWidth + pR);
-        this._pockets[5] = new Vector2(wallWidth, tHeight - wallWidth);
+        //numbers to corner pockets are given starting with top left clockwise
+        this._pockets[0] = new Vector2(pocketCenterShift, pocketCenterShift);
+        this._pockets[1] = new Vector2(tWidth - pocketCenterShift, pocketCenterShift);
+        this._pockets[2] = new Vector2(tWidth - pocketCenterShift, tHeight - pocketCenterShift);
+        this._pockets[3] = new Vector2(pocketCenterShift, tHeight - pocketCenterShift);
+        //middle pockets top and bottom
+        this._pockets[4] = new Vector2(tWidth / 2, pocketCenterShift);
+        this._pockets[5] = new Vector2(tWidth / 2, tHeight - pocketCenterShift);
     }
 
     //start game and adjust fps

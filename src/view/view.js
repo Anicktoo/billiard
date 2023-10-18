@@ -2,12 +2,31 @@ import { Vector2 } from "../utils/vector";
 
 export class View {
     static CUE_COLOR = '#2f1212';
-    static WALL_COLOR = '#221205';
-    static TABLE_COLOR = '#225522';
-    static POCKET_COLOR = '#000000';
+    static WALL_COLORS = [
+        '#A47461',
+        '#C48B68',
+        '#733D29',
+        '#5E2D19',
+        '#60311D',
+        '#5E2D1B',
+        '#411B10',
+        '#238E3B',
+        '#1D8C39',
+        '#238E3B',
+        '#177834'
+    ];
+    static TABLE_COLOR = '#124C24';
+    static POCKET_COLORS = [
+        '#000000',
+        '#222222',
+        '#CFB725'
+    ];
     static BALLS_COLORS = {
         main: '#551122',
         ordinary: '#FFFFFF'
+    }
+    static sprites = {
+        table: undefined
     }
 
     _ctxBalls;
@@ -24,18 +43,13 @@ export class View {
     _cueSpaceHeight;
     _viewToModelProportion;
 
-    constructor(canvasTable, canvasBalls, canvasCue, modelTableWidth) {
+    constructor(canvasTable, canvasBalls, canvasCue) {
         this._ctxTable = canvasTable.getContext('2d');
         this._ctxCue = canvasCue.getContext('2d');
         this._ctxBalls = canvasBalls.getContext('2d');
-        this.init(canvasTable, canvasCue, modelTableWidth);
     }
 
-    // recreate(canvasTable, canvasCue, modelTableWidth) {
-    //     this.init(canvasTable, canvasCue, modelTableWidth);
-    // }
-
-    init(canvasTable, canvasCue, modelTableWidth) {
+    async init(canvasTable, canvasCue, modelTableWidth) {
         this._cueSpaceWidth = canvasCue.width;
         this._cueSpaceHeight = canvasCue.height;
         this._tableWidth = canvasTable.width;
@@ -46,38 +60,132 @@ export class View {
         this._cueWidth = this._cueLength / 64;
         this._initialSpace = this._cueWidth;
         this._maxSpace = this._initialSpace * 30;
+        await this.loadSprites();
     }
 
-    renderTable() {
+    loadSprites() {
+        return new Promise((resolve) => {
+            const keys = Object.keys(View.sprites);
+            let i = 0;
+            const loop = (key) => {
+                View.sprites[key] = new Image();
+                View.sprites[key].onload = () => {
+                    if (i == keys.length - 1) {
+                        console.log('resolve');
+                        resolve();
+                    }
+                    else {
+                        loop(keys[++i]);
+                    }
+                }
+                View.sprites[key].src = `./img/${key}.png`;
+            }
+            loop(keys[i]);
+        })
+    }
+
+    renderTable(pocketRadius) {
         this._ctxTable.clearRect(0, 0, this._tableWidth, this._tableHeight);
         this._ctxTable.fillStyle = View.TABLE_COLOR;
-        this._ctxTable.fillRect(0, 0, this._tableWidth, this._tableHeight);
+        this._ctxTable.roundRect(0, 0, this._tableWidth, this._tableHeight, pocketRadius);
+        this._ctxTable.fill();
     }
 
-    renderPockets(pocketsPositions, pocketRadius) {
-        this._ctxTable.fillStyle = View.POCKET_COLOR;
+    renderPockets(pockets, pocketRadius, wallWidth) {
+        const viewPocketRadius = pocketRadius * this._viewToModelProportion;
+        const viewWallWidth = wallWidth * this._viewToModelProportion;
+        const lineWidth = 0.3 * viewPocketRadius;
+        this._ctxTable.lineWidth = lineWidth;
+        // const pocketShift = lineWidth;
 
-        for (let { x, y } of pocketsPositions) {
+        //render pocket
+        const renderPocket = (x, y, emptyPart) => {
+
+            const angle = -Math.PI * (emptyPart / 2 - 1 / 4);
+
+            //draw path to pocket
+            this._ctxTable.fillStyle = View.TABLE_COLOR;
+            this._ctxTable.translate(x, y);
+            this._ctxTable.rotate(-angle);
+            this._ctxTable.translate(-x, -y);
+            this._ctxTable.fillRect(x, y - viewPocketRadius, viewWallWidth * 2, viewPocketRadius * 2);
+            this._ctxTable.setTransform(1, 0, 0, 1, 0, 0);
+
+            //draw pocket
+            this._ctxTable.fillStyle = View.POCKET_COLORS[0];
             this._ctxTable.beginPath();
             this._ctxTable.arc(
-                x * this._viewToModelProportion,
-                y * this._viewToModelProportion,
-                pocketRadius * this._viewToModelProportion,
+                x,
+                y,
+                viewPocketRadius,
                 0, Math.PI * 2, false
             );
             this._ctxTable.fill();
+
+            //draw golden border
+            this._ctxTable.beginPath();
+            this._ctxTable.strokeStyle = View.POCKET_COLORS[2];
+            this._ctxTable.lineCap = 'round';
+            const middleKoef = emptyPart % 1 === 0 ? 0.3 : 0.5;
+            this._ctxTable.arc(
+                x,
+                y,
+                viewPocketRadius,
+                (emptyPart + middleKoef) * Math.PI / 2, Math.PI * (3 + (emptyPart - middleKoef)) / 2, false
+            );
+            this._ctxTable.stroke();
+        };
+
+        for (let i = 0; i < pockets.length; i++) {
+            let dir = i > 3 ? i * 2 + 1.5 : i + 1;
+            renderPocket(
+                pockets[i].x * this._viewToModelProportion,
+                pockets[i].y * this._viewToModelProportion,
+                dir
+            );
         }
     }
 
-    renderWalls(blockRects) {
-        this._ctxTable.fillStyle = View.WALL_COLOR;
-        for (let block of blockRects) {
-            this._ctxTable.fillRect(
-                block.x * this._viewToModelProportion,
-                block.y * this._viewToModelProportion,
-                block.width * this._viewToModelProportion,
-                block.height * this._viewToModelProportion);
+    renderWalls(blocks, pocketRadius, blockWidth) {
+        const layerWidth = blockWidth * this._viewToModelProportion / View.WALL_COLORS.length;
+        let curShift = layerWidth / 2;
+        this._ctxTable.lineWidth = layerWidth + 1;
+
+        for (let i = 0; i < View.WALL_COLORS.length; i++, curShift += layerWidth) {
+            this._ctxTable.strokeStyle = View.WALL_COLORS[i];
+            this._ctxTable.beginPath();
+            let radius = 0.5 * (pocketRadius - curShift);
+            radius = radius > 0 ? radius : 0;
+            this._ctxTable.roundRect(
+                curShift,
+                curShift,
+                this._tableWidth - 2 * curShift,
+                this._tableHeight - 2 * curShift,
+                radius
+            );
+            this._ctxTable.stroke();
         }
+        // show real walls
+        // for (let i = 0; i < blocks.length; i++) {
+        //     this._ctxTable.fillStyle = '#000';
+        //     this._ctxTable.fillStyle = `#${111 * (i % 10)}`;
+        //     const x = blocks[i].x * this._viewToModelProportion;
+        //     const y = blocks[i].y * this._viewToModelProportion;
+        //     const width = blocks[i].width * this._viewToModelProportion;
+        //     const height = blocks[i].height * this._viewToModelProportion;
+        //     if (blocks[i].rotate) {
+        //         this._ctxTable.translate(x, y);
+        //         this._ctxTable.rotate(blocks[i].rotate);
+        //         this._ctxTable.translate(-x, -y);
+        //     }
+        //     this._ctxTable.fillRect(
+        //         x,
+        //         y,
+        //         width,
+        //         height,
+        //     );
+        //     this._ctxTable.setTransform(1, 0, 0, 1, 0, 0);
+        // }
     }
 
     renderBalls(balls, radius) {

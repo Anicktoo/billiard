@@ -20,8 +20,13 @@ canvasBalls.height = canvasHeight;
 canvasCue.width = window.innerWidth;
 canvasCue.height = window.innerHeight;
 
-const view = new View(canvasTable, canvasBalls, canvasCue, Game.TABLE_WIDTH);
-const game = new Game(view);
-new Controller(game, canvasRect, view.viewToModelProportion);
 
-game.start();
+(async function loadAndStart() {
+    const view = new View(canvasTable, canvasBalls, canvasCue);
+    await view.init(canvasTable, canvasCue, Game.TABLE_WIDTH);
+
+    const game = new Game(view);
+    new Controller(game, canvasRect, view.viewToModelProportion);
+
+    game.start();
+})();

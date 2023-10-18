@@ -2,10 +2,11 @@ import { Vector2 } from "../utils/vector";
 
 export class Ball {
 
+    static RESTITUTION = 0.8;
     static FRICTION_KOEF = 0.03;
-    static RESTITUTION = 0.85;
-    static adjusted_friction_koef;
     static radius;
+    static adjusted_friction_koef;
+
     _pos;
     _dir;
     _vel;

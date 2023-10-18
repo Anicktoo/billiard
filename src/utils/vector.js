@@ -44,6 +44,14 @@ export class Vector2 {
         return this._x * v.x + this._y * v.y;
     }
 
+    getVectorInRotatedBasis(angle) {
+        //clockwise rotation
+        return new Vector2(
+            this._x * Math.cos(angle) + this._y * Math.sin(angle),
+            this._x * -Math.sin(angle) + this._y * Math.cos(angle),
+        );
+    }
+
     isZero() {
         return this._x === 0 && this._y === 0;
     }

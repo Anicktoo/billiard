@@ -3,36 +3,40 @@ import { Vector2 } from "../utils/vector";
 export class Block {
 
     static RESTITUTION = 0.7;
+
     _x;
     _y;
     _width;
     _height;
+    _rotate;
 
-    constructor(x, y, width, height) {
+
+    constructor(x, y, width, height, rotate = 0) {
         this._x = x;
         this._y = y;
         this._width = width;
         this._height = height;
+        this._rotate = rotate;
     }
 
-    findNearestVertexPos(pos) {
-        const topLeftPos = new Vector2(this._x, this._y);
-        const bottomRightPos = new Vector2(this._x + this._width, this.y + this._height);
+    findNearestVertexPos(ballPos, blockPos) {
+        const topLeftPos = new Vector2(blockPos.x, blockPos.y);
+        const bottomRightPos = new Vector2(blockPos.x + this._width, this.y + this._height);
 
-        if (Math.abs(topLeftPos.x - pos.x) < Math.abs(bottomRightPos.x - pos.x)) {
-            if (Math.abs(topLeftPos.y - pos.y) < Math.abs(bottomRightPos.y - pos.y)) {
+        if (Math.abs(topLeftPos.x - ballPos.x) < Math.abs(bottomRightPos.x - ballPos.x)) {
+            if (Math.abs(topLeftPos.y - ballPos.y) < Math.abs(bottomRightPos.y - ballPos.y)) {
                 console.log('topLeft');
                 return { pos: topLeftPos, horVector: new Vector2(-1, 0), vertVector: new Vector2(0, -1) };
             }
             else {
                 console.log('bottomLeft');
-                return { pos: new Vector2(this._x, this._y + this._height), horVector: new Vector2(-1, 0), vertVector: new Vector2(0, 1) };
+                return { pos: new Vector2(blockPos.x, blockPos.y + this._height), horVector: new Vector2(-1, 0), vertVector: new Vector2(0, 1) };
             }
         }
         else {
-            if (Math.abs(topLeftPos.y - pos.y) < Math.abs(bottomRightPos.y - pos.y)) {
+            if (Math.abs(topLeftPos.y - ballPos.y) < Math.abs(bottomRightPos.y - ballPos.y)) {
                 console.log('topRight');
-                return { pos: new Vector2(this._x + this._width, this._y), horVector: new Vector2(1, 0), vertVector: new Vector2(0, -1) };
+                return { pos: new Vector2(blockPos.x + this._width, blockPos.y), horVector: new Vector2(1, 0), vertVector: new Vector2(0, -1) };
             }
             else {
                 console.log('bottomRight');
@@ -42,35 +46,46 @@ export class Block {
     }
 
     collide(ball, ballRadius) {
-        // if (this._x === 136.5685424949238 && this._y === 944) {
-        //     console.log(ball.dir);
-        // }
-
-        const ballNextPos = ball.pos.add(ball.dir, ball.vel);
+        let ballPos, ballDir, blockPos;
+        //If block is rotated we switch to a new basis
+        let test = false;
+        test;
+        if (this._rotate) {
+            test = true;
+            ballPos = ball.pos.getVectorInRotatedBasis(this._rotate);
+            ballDir = ball.dir.getVectorInRotatedBasis(this._rotate);
+            blockPos = new Vector2(this._x, this._y).getVectorInRotatedBasis(this._rotate);
+        }
+        else {
+            ballPos = ball.pos;
+            ballDir = ball.dir;
+            blockPos = new Vector2(this._x, this._y);
+        }
+        const ballNextPos = ballPos.add(ballDir, ball.vel);
 
         //check if square around ball intersects with block
-        if (!this.isNextPosInBox(ballRadius, ballNextPos)) {
+        if (!this.isNextPosInBox(ballRadius, ballNextPos, blockPos)) {
             return;
         }
 
         //collision with vertical edge
-        if (ballNextPos.y > this._y && ballNextPos.y < this._y + this._height) {
-            ball.dir.x *= -1;
+        if (ballNextPos.y > blockPos.y && ballNextPos.y < blockPos.y + this._height) {
+            ballDir.x *= -1;
             ball.vel *= Block.RESTITUTION;
-            this.checkTrappedBall(ball, ballRadius);
+            this.checkTrappedBall(ballPos, ballDir, ball.vel, ballRadius, blockPos);
         }
         //collision with horizontal edge
-        else if (ballNextPos.x > this._x && ballNextPos.x < this._x + this._width) {
-            ball.dir.y *= -1;
+        else if (ballNextPos.x > blockPos.x && ballNextPos.x < blockPos.x + this._width) {
+            ballDir.y *= -1;
             ball.vel *= Block.RESTITUTION;
-            this.checkTrappedBall(ball, ballRadius);
+            this.checkTrappedBall(ballPos, ballDir, ball.vel, ballRadius, blockPos);
         }
         //collision with corner
         else {
-            console.log(ball.dir, ball.pos);
+            console.log(ballDir, ballPos);
 
             //check if ball intersects with corners
-            const nearestVertex = this.findNearestVertexPos(ballNextPos);
+            const nearestVertex = this.findNearestVertexPos(ballNextPos, blockPos);
             const vertexToBallVector = ballNextPos.substract(nearestVertex.pos);
             const vertexToBallDist = vertexToBallVector.getLength();
             if (vertexToBallDist > ballRadius) {
@@ -89,33 +104,42 @@ export class Block {
                 normal = nearestVertex.horVector;
             }
 
-            const doubledProjectionLength = 2 * ball.dir.dot(normal);
-            ball.dir = ball.dir.substract(normal.scale(doubledProjectionLength));
+            const doubledProjectionLength = 2 * ballDir.dot(normal);
+            ballDir = ballDir.substract(normal.scale(doubledProjectionLength));
 
             //correction, so the ball wouldn't stuck in the corner
-            ball.pos = ball.pos.add(normal, ballRadius - vertexToBallDist);
+            ballPos = ballPos.add(normal, ballRadius - vertexToBallDist);
 
             ball.vel *= Block.RESTITUTION;
         }
 
+        //If block is rotated we switch back to a main basis
+        if (this._rotate) {
+            ball.pos = ballPos.getVectorInRotatedBasis(-this._rotate);
+            ball.dir = ballDir.getVectorInRotatedBasis(-this._rotate);
+        }
+        else {
+            ball.pos = ballPos;
+            ball.dir = ballDir;
+        }
     }
 
     //check if ball due to descrete steps collided with a wrong edge and reflected inside the block
-    checkTrappedBall(ball, ballRadius) {
-        const ballNextPos = ball.pos.add(ball.dir, ball.vel);
-        if (this.isNextPosInBox(ballRadius, ballNextPos)) {
-            console.log('ball trap is avoided');
-            ball.dir.x *= -1;
-            ball.dir.y *= -1;
+    checkTrappedBall(ballPos, ballDir, ballVel, ballRadius, blockPos) {
+        const ballNextPos = ballPos.add(ballDir, ballVel);
+
+        if (this.isNextPosInBox(ballRadius, ballNextPos, blockPos)) {
+            ballDir.x *= -1;
+            ballDir.y *= -1;
         }
     }
 
     //if next ball position will be withtin block
-    isNextPosInBox(ballRadius, ballNextPos) {
-        return ballNextPos.x + ballRadius > this._x &&
-            ballNextPos.x - ballRadius < this._x + this._width &&
-            ballNextPos.y + ballRadius > this._y &&
-            ballNextPos.y - ballRadius < this._y + this._height;
+    isNextPosInBox(ballRadius, ballNextPos, blockPos) {
+        return ballNextPos.x + ballRadius > blockPos.x &&
+            ballNextPos.x - ballRadius < blockPos.x + this._width &&
+            ballNextPos.y + ballRadius > blockPos.y &&
+            ballNextPos.y - ballRadius < blockPos.y + this._height;
     }
 
     get x() {
@@ -144,5 +168,12 @@ export class Block {
     }
     set height(value) {
         this._height = value;
+    }
+
+    get rotate() {
+        return this._rotate;
+    }
+    set rotate(value) {
+        this._rotate = value;
     }
 }
