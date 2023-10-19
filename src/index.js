@@ -26,6 +26,13 @@ const setCanvasSizes = function () {
     canvasCue.height = window.innerHeight;
 }
 
+const resize = async function () {
+    setCanvasSizes();
+    await view.init(canvasTable, canvasCue, Game.TABLE_WIDTH);
+    model.renderGame();
+    controller.resizeInit(canvasTable, view.viewToModelProportion);
+}
+
 const loadAndStart = async function () {
     setCanvasSizes();
     view = new View(canvasTable, canvasBalls, canvasCue);
@@ -34,13 +41,8 @@ const loadAndStart = async function () {
     controller = new Controller(model, canvasTable, view.viewToModelProportion);
     model.start();
 
-    window.addEventListener('resize', async () => {
-        setCanvasSizes();
-        await view.init(canvasTable, canvasCue, Game.TABLE_WIDTH);
-        model.renderGame();
-        controller.resizeInit(canvasTable, view.viewToModelProportion);
-    });
+    window.addEventListener('resize', resize);
 }
 
-loadAndStart();
-console.log('v1');
+window.addEventListener('load', loadAndStart);
+console.log('v2');
