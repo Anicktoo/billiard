@@ -98,6 +98,18 @@ module.exports = {
         {
             test: /\.(png|jpg|svg|gif|ttf|woff|woff2|eot)$/,
             type: 'asset/resource'
+        },
+        {
+            test: /\.(?:js|mjs|cjs)$/,
+            exclude: path.resolve(__dirname, "node_modules/"),
+            use: {
+                loader: 'babel-loader',
+                options: {
+                    presets: [
+                        ['@babel/preset-env', { targets: "defaults" }]
+                    ]
+                }
+            }
         }],
     },
 }
