@@ -30,9 +30,10 @@ const loadAndStart = async function () {
     setCanvasSizes();
     view = new View(canvasTable, canvasBalls, canvasCue);
     await view.init(canvasTable, canvasCue, Game.TABLE_WIDTH);
+    console.log('2');
     model = new Game(view);
     controller = new Controller(model, canvasTable, view.viewToModelProportion);
-    await model.start();
+    model.start();
 
     window.addEventListener('resize', async () => {
         setCanvasSizes();
@@ -43,3 +44,4 @@ const loadAndStart = async function () {
 }
 
 loadAndStart();
+console.log('v1');
