@@ -25,21 +25,21 @@ export class Block {
 
         if (Math.abs(topLeftPos.x - ballPos.x) < Math.abs(bottomRightPos.x - ballPos.x)) {
             if (Math.abs(topLeftPos.y - ballPos.y) < Math.abs(bottomRightPos.y - ballPos.y)) {
-                console.log('topLeft');
+                // console.log('topLeft');
                 return { pos: topLeftPos, horVector: new Vector2(-1, 0), vertVector: new Vector2(0, -1) };
             }
             else {
-                console.log('bottomLeft');
+                // console.log('bottomLeft');
                 return { pos: new Vector2(blockPos.x, blockPos.y + this._height), horVector: new Vector2(-1, 0), vertVector: new Vector2(0, 1) };
             }
         }
         else {
             if (Math.abs(topLeftPos.y - ballPos.y) < Math.abs(bottomRightPos.y - ballPos.y)) {
-                console.log('topRight');
+                // console.log('topRight');
                 return { pos: new Vector2(blockPos.x + this._width, blockPos.y), horVector: new Vector2(1, 0), vertVector: new Vector2(0, -1) };
             }
             else {
-                console.log('bottomRight');
+                // console.log('bottomRight');
                 return { pos: bottomRightPos, horVector: new Vector2(1, 0), vertVector: new Vector2(0, 1) };
             }
         }
@@ -82,8 +82,6 @@ export class Block {
         }
         //collision with corner
         else {
-            console.log(ballDir, ballPos);
-
             //check if ball intersects with corners
             const nearestVertex = this.findNearestVertexPos(ballNextPos, blockPos);
             const vertexToBallVector = ballNextPos.substract(nearestVertex.pos);
@@ -96,11 +94,9 @@ export class Block {
 
             //For cases when normal vector is chosen incorrectly we return it to possible range
             if (Math.abs(nearestVertex.horVector.x - normal.x) > 1) {
-                console.log('hor normal change');
                 normal = nearestVertex.vertVector;
             }
             else if (Math.abs(nearestVertex.vertVector.y - normal.y) > 1) {
-                console.log('vert normal change');
                 normal = nearestVertex.horVector;
             }
 
