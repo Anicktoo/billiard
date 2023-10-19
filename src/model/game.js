@@ -26,7 +26,6 @@ export class Game {
 
 
     constructor(view) {
-        console.log('game');
         this._view = view;
         Ball.radius = Game.BALL_RADIUS;
         this._oldTime = 0;
@@ -177,12 +176,13 @@ export class Game {
         else {
             this._view.fadeOutStop();
             this._view.renderCue(
-                this.chosenBall.pos,
-                this.targetPos,
+                this._chosenBall.pos,
+                this._targetPos,
                 Ball.radius,
-                this.hitPower
+                this._hitPower
             );
         }
+        this._view.animate();
     }
 
     //update game state
@@ -205,6 +205,7 @@ export class Game {
 
             for (let pocket of this._pockets) {
                 if (this.checkPocket(pocket, curBall)) {
+                    this._view.animatePocketHitStart(pocket, curBall, Ball.radius);
                     this._balls.splice(i, 1);
                     if (!this._balls) {
                         this.endGame();
@@ -257,14 +258,13 @@ export class Game {
         this._chosenBall.dir = this._targetPos.substract(this._chosenBall.pos);
         this._chosenBall.vel = this._hitPower * Game.MAX_HIT_POWER;
 
-        console.log('model hit power: ' + this._chosenBall.vel);
-
         this._view.renderCue(
             this.chosenBall.pos,
             this.targetPos,
             Ball.radius,
         );
-        this._view.fadeOutCue();
+        this._view.fadeOutStart();
+        // this._view.fadeOutCue();
     }
 
 

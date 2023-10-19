@@ -50,7 +50,6 @@ export class Controller {
                 .substract(pressPos)
                 .getNormalized();
             window.addEventListener('mouseup', () => {
-                console.log('control hit power: ' + this._model.hitPower);
                 if (this._model.hitPower < Controller.HIT_POWER_TRASHOLD) {
                     this._model.chooseBall(pressPos.scale(this._modelToControlProportion));
                 }

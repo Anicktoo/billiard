@@ -29,7 +29,7 @@ export class View {
         '#238E3B',
         '#177834'
     ];
-    /** */
+    static SHADOW_SHIFT = 1.3;
 
     _sprites = {
         cue: undefined,
@@ -47,14 +47,19 @@ export class View {
     _tableWidth;
     _tableHeight;
     _initialSpace;
+    _fadeGenerator;
     _cueSpaceWidth;
     _cueSpaceHeight;
+    _animatePocketHitStop;
     _viewToModelProportion;
+    _animatePocketHitGenerator;
 
     constructor(canvasTable, canvasBalls, canvasCue) {
         this._ctxTable = canvasTable.getContext('2d');
         this._ctxCue = canvasCue.getContext('2d');
         this._ctxBalls = canvasBalls.getContext('2d');
+        this._fadeGenerator = this.fadeOutCue();
+        this._animatePocketHitGenerator = this.animatePocketHit();
     }
 
     async init(canvasTable, canvasCue, modelTableWidth) {
@@ -68,7 +73,9 @@ export class View {
         this._cueLength = this._tableHeight;
         this._cueWidth = this._cueLength / 32;
         this._initialSpace = this._cueWidth;
-        this._maxSpace = this._initialSpace * 30;
+        this._maxSpace = this._initialSpace * 20;
+        this._animatePocketHitStop = true;
+        this.__fadeStop = true;
         await this.loadSprites();
     }
 
@@ -235,7 +242,9 @@ export class View {
         radius *= this._viewToModelProportion;
         let ballPoses = [];
         const ballW = radius * 2;
-        const shadowShift = radius * 1.3;
+        const shadowShift = radius * View.SHADOW_SHIFT;
+        this._ctxBalls.globalCompositeOperation = 'source-over';
+
         //draw shadow 
         for (let i = 0; i < balls.length; i++) {
             const { x, y } = balls[i].pos.scale(this._viewToModelProportion);
@@ -272,33 +281,102 @@ export class View {
         this._ctxCue.rotate(angle);
         this._ctxCue.translate(-cueLeftTop.x, -cueLeftTop.y);
         this._ctxCue.drawImage(this._sprites.cue, cueLeftTop.x, cueLeftTop.y, this._cueLength, this._cueWidth);
-        // this._ctxCue.fillRect(cueLeftTop.x, cueLeftTop.y, this._cueLength, this._cueWidth);
         this._ctxCue.setTransform(1, 0, 0, 1, 0, 0);
     }
 
-    fadeOutCue(firstCall = true, visible = 1) {
-        if (firstCall) {
-            this._fadeStop = false;
-        }
-        visible -= 0.01;
-        this._ctxCue.globalCompositeOperation = 'destination-in';
-        this._ctxCue.fillStyle = `rgba(255, 255, 255, ${visible})`;
-        this._ctxCue.fillRect(0, 0, this._cueSpaceWidth, this._cueSpaceHeight);
-        if (visible > 0) {
-            if (!this._fadeStop) {
-                requestAnimationFrame(this.fadeOutCue.bind(this, false, visible));
+
+
+    fadeOutStart() {
+        this._fadeStop = false;
+    }
+    fadeOutStop() {
+        this._fadeStop = true;
+        this._fadeGenerator = this.fadeOutCue();
+    }
+
+    *fadeOutCue() {
+        let visible = 1;
+        while (true) {
+            visible -= 0.01;
+            this._ctxCue.globalCompositeOperation = 'destination-in';
+            this._ctxCue.fillStyle = `rgba(255, 255, 255, ${visible})`;
+            this._ctxCue.fillRect(0, 0, this._cueSpaceWidth, this._cueSpaceHeight);
+            if (visible > 0 && !this._fadeStop) {
+                yield;
             }
             else {
-                this._fadeStop = false;
+                this._ctxCue.clearRect(0, 0, this._cueSpaceWidth, this._cueSpaceHeight);
+                return;
             }
-        }
-        else {
-            this._ctxCue.clearRect(0, 0, this._cueSpaceWidth, this._cueSpaceHeight);
         }
     }
 
-    fadeOutStop() {
-        this._fadeStop = true;
+    animatePocketHitStart(pocket, ball, radius) {
+        this._animatePocketHitStop = false;
+        this._animatePocketHitGenerator = this.animatePocketHit(pocket, ball, radius);
+    }
+    animatePocketHitStop() {
+        this._animatePocketHitStop = true;
+    }
+
+    *animatePocketHit(pocket, ball, radius) {
+        radius *= this._viewToModelProportion;
+        pocket = pocket.scale(this._viewToModelProportion);
+        let curPos = ball.pos.scale(this._viewToModelProportion);
+        const dir = pocket.substract(curPos).getNormalized();
+        const ballW = radius * 2;
+        let visible = 0;
+        let vel = ball.vel * 0.5;
+        if (vel > 20) vel = 20;
+        if (vel < 0.5) vel = 0.5;
+        const shadowShift = radius * View.SHADOW_SHIFT;
+
+        while (true) {
+            if (curPos === pocket) {
+                visible += 0.05;
+                this._ctxBalls.globalCompositeOperation = 'destination-out';
+                this._ctxBalls.fillStyle = `rgba(255, 255, 255, ${visible})`;
+                this._ctxBalls.fillRect(curPos.x - radius, curPos.y - radius, ballW, ballW + shadowShift);
+            }
+            else {
+                this._ctxBalls.clearRect(curPos.x - radius - 1, curPos.y - radius - 1, ballW + 2, ballW + shadowShift + 2);
+                const curDir = pocket.substract(curPos).getNormalized();
+                curPos = curPos.add(dir, vel);
+                if (Math.abs(curDir.x - dir.x) > 1 || Math.abs(curDir.y - dir.y) > 1) {
+                    curPos = pocket;
+                }
+                this._ctxBalls.globalCompositeOperation = 'source-over';
+
+                this._ctxBalls.drawImage(this._sprites.shadow, curPos.x - radius, curPos.y - ballW + shadowShift, ballW, ballW);
+                this._ctxBalls.fillStyle = View.BALLS_COLORS[ball.type];
+                this._ctxBalls.beginPath();
+                this._ctxBalls.arc(curPos.x, curPos.y, radius, 0, Math.PI * 2, false);
+                this._ctxBalls.fill();
+                this._ctxBalls.drawImage(this._sprites.ball, curPos.x - radius, curPos.y - radius, ballW, ballW);
+            }
+
+            if (visible < 1) {
+                yield;
+            }
+            else {
+                this._ctxBalls.clearRect(curPos.x - radius - 1, curPos.y - radius - 1, ballW + 2, ballW + shadowShift + 2);
+                return;
+            }
+        }
+
+    }
+
+    animate() {
+        if (!this._fadeStop) {
+            if (this._fadeGenerator.next().done) {
+                this.fadeOutStop();
+            }
+        }
+        if (!this._animatePocketHitStop) {
+            if (this._animatePocketHitGenerator.next().done) {
+                this.animatePocketHitStop();
+            }
+        }
     }
 
     get viewToModelProportion() {
