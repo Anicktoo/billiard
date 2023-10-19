@@ -1,9 +1,9 @@
 import '@/styles/reset.css';
 import '@/styles/styles.css';
+import 'canvas-roundrect-polyfill';
 import { View } from '@/view/view.js';
 import { Game } from '@/model/game.js';
 import { Controller } from './controller/controller';
-
 
 const canvasTable = document.getElementById('canvas-table');
 const canvasBalls = document.getElementById('canvas-balls');
@@ -30,7 +30,6 @@ const loadAndStart = async function () {
     setCanvasSizes();
     view = new View(canvasTable, canvasBalls, canvasCue);
     await view.init(canvasTable, canvasCue, Game.TABLE_WIDTH);
-    console.log('2');
     model = new Game(view);
     controller = new Controller(model, canvasTable, view.viewToModelProportion);
     model.start();
