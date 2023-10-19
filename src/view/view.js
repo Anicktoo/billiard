@@ -2,11 +2,25 @@ import { Vector2 } from "../utils/vector";
 
 export class View {
     static CUE_COLOR = '#2f1212';
+    static DECOR_COLOR = '#CFB725';
+    static TABLE_COLOR = '#145127';
+    static BALLS_COLORS = {
+        main: '#670730',
+        ordinary: '#D9D9C3'
+    }
+    static POCKET_COLORS = [
+        '#181111',
+        '#222222',
+        '#CFB725'
+    ];
     static WALL_COLORS = [
         '#A47461',
         '#C48B68',
         '#733D29',
         '#5E2D19',
+        '#60311D',
+        '#60311D',
+        '#60311D',
         '#60311D',
         '#5E2D1B',
         '#411B10',
@@ -15,26 +29,20 @@ export class View {
         '#238E3B',
         '#177834'
     ];
-    static TABLE_COLOR = '#124C24';
-    static POCKET_COLORS = [
-        '#000000',
-        '#222222',
-        '#CFB725'
-    ];
-    static BALLS_COLORS = {
-        main: '#551122',
-        ordinary: '#FFFFFF'
-    }
-    static sprites = {
-        table: undefined
-    }
+    /** */
 
-    _ctxBalls;
+    _sprites = {
+        cue: undefined,
+        ball: undefined,
+        shadow: undefined,
+    }
     _ctxCue;
+    _ctxBalls;
     _cueWidth;
     _maxSpace;
     _ctxTable;
     _fadeStop;
+    _tablePos;
     _cueLength;
     _tableWidth;
     _tableHeight;
@@ -50,14 +58,15 @@ export class View {
     }
 
     async init(canvasTable, canvasCue, modelTableWidth) {
+        const tablePosRect = canvasTable.getBoundingClientRect();
         this._cueSpaceWidth = canvasCue.width;
         this._cueSpaceHeight = canvasCue.height;
         this._tableWidth = canvasTable.width;
         this._tableHeight = canvasTable.height;
         this._viewToModelProportion = this._tableWidth / modelTableWidth;
-        this.tablePos = new Vector2(canvasTable.getBoundingClientRect().left, canvasTable.getBoundingClientRect().top);
+        this._tablePos = new Vector2(tablePosRect.left, tablePosRect.top);
         this._cueLength = this._tableHeight;
-        this._cueWidth = this._cueLength / 64;
+        this._cueWidth = this._cueLength / 32;
         this._initialSpace = this._cueWidth;
         this._maxSpace = this._initialSpace * 30;
         await this.loadSprites();
@@ -65,20 +74,20 @@ export class View {
 
     loadSprites() {
         return new Promise((resolve) => {
-            const keys = Object.keys(View.sprites);
+            const keys = Object.keys(this._sprites);
             let i = 0;
             const loop = (key) => {
-                View.sprites[key] = new Image();
-                View.sprites[key].onload = () => {
+                this._sprites[key] = new Image();
+                this._sprites[key].onload = () => {
                     if (i == keys.length - 1) {
-                        console.log('resolve');
                         resolve();
                     }
                     else {
                         loop(keys[++i]);
                     }
                 }
-                View.sprites[key].src = `./img/${key}.png`;
+
+                this._sprites[key].src = `./img/${key}.png`;
             }
             loop(keys[i]);
         })
@@ -131,7 +140,9 @@ export class View {
                 x,
                 y,
                 viewPocketRadius,
-                (emptyPart + middleKoef) * Math.PI / 2, Math.PI * (3 + (emptyPart - middleKoef)) / 2, false
+                (emptyPart + middleKoef) * Math.PI / 2,
+                Math.PI * (3 + (emptyPart - middleKoef)) / 2,
+                false
             );
             this._ctxTable.stroke();
         };
@@ -165,6 +176,37 @@ export class View {
             );
             this._ctxTable.stroke();
         }
+
+        const decorRadius = blockWidth * this._viewToModelProportion / 15;
+        for (let block of blocks) {
+            if (block.rotate) continue;
+            const x = block.x * this._viewToModelProportion;
+            const y = block.y * this._viewToModelProportion;
+            const quartWidth = block.width * this._viewToModelProportion / 4;
+            const halfHeight = block.height * this._viewToModelProportion / 2;
+
+            this._ctxTable.fillStyle = View.DECOR_COLOR;
+            for (let i = 1; i <= 3; i++) {
+
+                let curX = x + quartWidth * i;
+                let curY = y + halfHeight;
+
+                if (block.width < block.height) {
+                    curX = x + block.width * this._viewToModelProportion / 2;
+                    curY = y + block.height * this._viewToModelProportion / 4 * i;
+                }
+                this._ctxTable.beginPath();
+                this._ctxTable.arc(
+                    curX,
+                    curY,
+                    decorRadius,
+                    0,
+                    Math.PI * 2,
+                );
+                this._ctxTable.fill();
+            }
+        }
+
         // show real walls
         // for (let i = 0; i < blocks.length; i++) {
         //     this._ctxTable.fillStyle = '#000';
@@ -191,13 +233,23 @@ export class View {
     renderBalls(balls, radius) {
         this._ctxBalls.clearRect(0, 0, this._tableWidth, this._tableHeight);
         radius *= this._viewToModelProportion;
-
+        let ballPoses = [];
+        const ballW = radius * 2;
+        const shadowShift = radius * 1.3;
+        //draw shadow 
+        for (let i = 0; i < balls.length; i++) {
+            const { x, y } = balls[i].pos.scale(this._viewToModelProportion);
+            ballPoses.push({ x, y });
+            this._ctxBalls.drawImage(this._sprites.shadow, x - radius, y - ballW + shadowShift, ballW, ballW);
+        }
+        //draw ball
         for (let i = 0; i < balls.length; i++) {
             const { x, y } = balls[i].pos.scale(this._viewToModelProportion);
             this._ctxBalls.fillStyle = View.BALLS_COLORS[balls[i].type];
             this._ctxBalls.beginPath();
             this._ctxBalls.arc(x, y, radius, 0, Math.PI * 2, false);
             this._ctxBalls.fill();
+            this._ctxBalls.drawImage(this._sprites.ball, x - radius, y - radius, ballW, ballW);
         }
     }
 
@@ -206,21 +258,22 @@ export class View {
         targetPosition = targetPosition.scale(this._viewToModelProportion);
         ballRadius *= this._viewToModelProportion;
         cueShift *= this._viewToModelProportion;
-
-        this._ctxCue.clearRect(0, 0, this._cueSpaceWidth, this._cueSpaceHeight);
         const dir = ballPosition.substract(targetPosition).getNormalized();
-        const cueTop = ballPosition.add(this.tablePos).add(dir, ballRadius + this._initialSpace + cueShift * this._maxSpace);
-        const cueBottom = cueTop.add(dir, this._cueLength);
-
+        const ortDir = new Vector2(-dir.y, dir.x);
+        const cueLeftTop = ballPosition.add(this._tablePos).add(dir, ballRadius + this._initialSpace + cueShift * this._maxSpace + this._cueLength).add(ortDir, this._cueWidth / 2);
+        let angle = Math.acos(-dir.x);
+        if (dir.y > 0) {
+            angle *= -1;
+        }
+        angle;
+        this._ctxCue.clearRect(0, 0, this._cueSpaceWidth, this._cueSpaceHeight);
         this._ctxCue.globalCompositeOperation = 'source-over';
-        this._ctxCue.strokeStyle = View.CUE_COLOR;
-        this._ctxCue.beginPath();
-        this._ctxCue.moveTo(cueTop.x, cueTop.y);
-        this._ctxCue.lineTo(cueBottom.x, cueBottom.y);
-        this._ctxCue.lineWidth = this._cueWidth;
-        this._ctxCue.stroke();
-        this._ctxCue.closePath();
-
+        this._ctxCue.translate(cueLeftTop.x, cueLeftTop.y);
+        this._ctxCue.rotate(angle);
+        this._ctxCue.translate(-cueLeftTop.x, -cueLeftTop.y);
+        this._ctxCue.drawImage(this._sprites.cue, cueLeftTop.x, cueLeftTop.y, this._cueLength, this._cueWidth);
+        // this._ctxCue.fillRect(cueLeftTop.x, cueLeftTop.y, this._cueLength, this._cueWidth);
+        this._ctxCue.setTransform(1, 0, 0, 1, 0, 0);
     }
 
     fadeOutCue(firstCall = true, visible = 1) {
