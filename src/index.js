@@ -32,14 +32,14 @@ const loadAndStart = async function () {
     await view.init(canvasTable, canvasCue, Game.TABLE_WIDTH);
     model = new Game(view);
     controller = new Controller(model, canvasTable, view.viewToModelProportion);
-    model.start();
-}
+    await model.start();
 
-window.addEventListener('resize', async () => {
-    setCanvasSizes();
-    await view.init(canvasTable, canvasCue, Game.TABLE_WIDTH);
-    model.renderGame();
-    controller.resizeInit(canvasTable, view.viewToModelProportion);
-});
+    window.addEventListener('resize', async () => {
+        setCanvasSizes();
+        await view.init(canvasTable, canvasCue, Game.TABLE_WIDTH);
+        model.renderGame();
+        controller.resizeInit(canvasTable, view.viewToModelProportion);
+    });
+}
 
 loadAndStart();
