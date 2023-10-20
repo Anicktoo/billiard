@@ -13,6 +13,11 @@ export class View {
         '#222222',
         '#CFB725'
     ];
+    static AIM_COLOR = [
+        '#FFFFFF',
+        '#FFF5D6',
+        '#FFC200',
+    ]
     static WALL_COLORS = [
         '#A47461',
         '#C48B68',
@@ -284,7 +289,23 @@ export class View {
         this._ctxCue.setTransform(1, 0, 0, 1, 0, 0);
     }
 
+    showAimLine(startBall, intersectionPos, intersectionDir, radius) {
+        const startPos = startBall.pos.add(intersectionDir, radius + 1).scale(this._viewToModelProportion).add(this._tablePos);
+        intersectionPos = intersectionPos.scale(this._viewToModelProportion).add(this._tablePos);
+        radius *= this._viewToModelProportion;
 
+        this._ctxCue.lineCap = 'round';
+        for (let i = View.AIM_COLOR.length - 1; i >= 0; i--) {
+            this._ctxCue.filter = `blur(${(i + 1) * 2}px) opacity(0.4)`;
+            this._ctxCue.strokeStyle = View.AIM_COLOR[i];
+            this._ctxCue.lineWidth = i + 1;
+            this._ctxCue.beginPath();
+            this._ctxCue.moveTo(startPos.x, startPos.y);
+            this._ctxCue.lineTo(intersectionPos.x, intersectionPos.y);
+            this._ctxCue.stroke();
+        }
+        this._ctxCue.filter = `none`;
+    }
 
     fadeOutStart() {
         this._fadeStop = false;

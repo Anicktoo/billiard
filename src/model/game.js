@@ -181,6 +181,8 @@ export class Game {
                 Ball.radius,
                 this._hitPower
             );
+            const intersection = this.updateTargetPoint();
+            this._view.showAimLine(this._chosenBall, intersection.pos, intersection.fromBallDir, Ball.radius);
         }
         this._view.animate();
     }
@@ -267,6 +269,111 @@ export class Game {
         // this._view.fadeOutCue();
     }
 
+    updateTargetPoint() {
+        if (!this._chosenBall) {
+            return;
+        }
+        //object in which we contain info about intesection position and direction from chosen ball to intersection
+        let intersection = {};
+        const dir = this._targetPos.substract(this._chosenBall.pos).getNormalized();
+        intersection.fromBallDir = dir;
+        let minDist = Number.POSITIVE_INFINITY;
+
+        for (let ball of this._balls) {
+            if (ball === this._chosenBall) {
+                continue;
+            }
+            minDist = this.findIntersectionDistOfLineAndCircle(dir, this._chosenBall.pos, ball.pos, minDist, Ball.radius);
+        }
+        if (Number.isFinite(minDist)) {
+            intersection.pos = this._chosenBall.pos.add(dir, minDist);
+        }
+        else {
+            intersection.pos = this.findIntersectionWithWall(dir.x, dir.y, this._chosenBall.pos.x, this._chosenBall.pos.y);
+        }
+
+        return intersection;
+    }
+
+    findIntersectionWithWall(dirX, dirY, startX, startY) {
+        const intersection = new Vector2(0, 0);
+        let lengthToWallX;
+        let lengthToWallY;
+        let forwardX = 1;
+        let forwardY = 1;
+
+        if (dirX > 0) {
+            lengthToWallX = Game.TABLE_WIDTH - Game.WALL_WIDTH - startX;
+            intersection.x = Game.TABLE_WIDTH - Game.WALL_WIDTH;
+        }
+        else {
+            lengthToWallX = startX - Game.WALL_WIDTH;
+            intersection.x = Game.WALL_WIDTH;
+            forwardX = -1;
+        }
+
+        if (dirY < 0) {
+            lengthToWallY = startY - Game.WALL_WIDTH;
+            intersection.y = Game.WALL_WIDTH;
+            forwardY = -1;
+        }
+        else {
+            lengthToWallY = Game.TABLE_HEIGHT - Game.WALL_WIDTH - startY;
+            intersection.y = Game.TABLE_HEIGHT - Game.WALL_WIDTH;
+        }
+
+
+        let isVerticalWallIntesection = false;
+        if (dirX === 0) {
+            isVerticalWallIntesection = false;
+        }
+        else if (dirY === 0) {
+            isVerticalWallIntesection = true;
+        }
+        else if (lengthToWallX / Math.abs(dirX) < lengthToWallY / Math.abs(dirY)) {
+            isVerticalWallIntesection = true;
+        }
+        else {
+            isVerticalWallIntesection = false;
+        }
+
+
+        const angle = Math.acos(Math.abs(dirX));
+
+        if (isVerticalWallIntesection) {
+            lengthToWallY = lengthToWallX * Math.tan(angle);
+            intersection.y = startY + lengthToWallY * forwardY;
+        }
+        else {
+            lengthToWallX = lengthToWallY / Math.tan(angle);
+            intersection.x = startX + lengthToWallX * forwardX;
+        }
+
+        return intersection;
+    }
+
+    // method works with a circle in the center of coordinats
+    findIntersectionDistOfLineAndCircle(dir, startPos, ballPos, distMax, r) {
+        const fromTarget = startPos.substract(ballPos);
+        const b = 2 * fromTarget.dot(dir);
+        const c = fromTarget.dot(fromTarget) - r * r;
+        const D = b * b - 4 * c;
+
+        if (D < 0) {
+            return distMax;
+        }
+
+        let dist1 = (-b - Math.sqrt(D)) / 2;
+        let dist2 = (-b + Math.sqrt(D)) / 2;
+
+        let dist = Math.min(dist1, dist2);
+
+        if (dist < 0 || dist > distMax) {
+            return distMax;
+        }
+
+        return dist;
+    }
 
     checkPocket(pocket, ball) {
         return ball.pos.substract(pocket).getLength() < Game.POCKET_RADIUS;
