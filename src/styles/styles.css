@@ -1,9 +1,16 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
 :root {
     --width: 80vw;
     --height: 80vh;
     --real-width: min(var(--width), calc(var(--height) * 2));
     --real-height: min(var(--height), calc(var(--width) / 2));
-    --button-size: calc(var(--real-height) / 10);
+    --button-size: calc(var(--real-height) / 12);
+}
+
+body {
+    font-family: "Inter", sans-serif;
+    line-height: 1.5;
 }
 
 .background {
@@ -34,18 +41,23 @@
     height: 100%;
 }
 
-.button {
+.buttons {
     position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--button-size) / 2);
+    top: 0;
+    left: calc(var(--button-size) + var(--real-width));
+}
+
+.button {
     width: var(--button-size);
     height: var(--button-size);
-    left: calc(var(--button-size) + var(--real-width));
-    top: 0;
-    background: url(../../src/img/restart.svg);
+    /* background: url(../../src/img/restart.svg); */
     background-repeat: no-repeat;
     background-position: 50% 50%;
     background-size: 80%;
-    background-color: #aaaaaa;
-
+    background-color: #D9D9C3;
     border-radius: 10px;
     box-sizing: border-box;
     cursor: pointer;
@@ -60,19 +72,91 @@
     touch-action: manipulation;
     will-change: transform;
     z-index: 1000;
-
 }
 
-.button:disabled {
+.reactive:disabled {
     pointer-events: none;
 }
 
-.button:hover {
+.reactive:hover {
     box-shadow: rgba(0, 0, 0, 0.25) 0 8px 15px;
     transform: translateY(-2px);
 }
 
-.button:active {
+.reactive:active {
     box-shadow: none;
     transform: translateY(0);
+}
+
+#restart {
+    background-image: url(../../src/img/restart.svg);
+}
+
+#info {
+    background-image: url(../../src/img/info.svg);
+}
+
+
+details {
+    position: relative;
+}
+
+summary {
+    width: 100%;
+    height: 100%;
+    list-style: none;
+}
+
+details div {
+    position: absolute;
+    top: calc(var(--button-size) * 2);
+    right: 0;
+    background-color: #1e1e27;
+    box-shadow: -10px 10px 10px #000000;
+    padding: 1.25rem;
+    border-radius: 8px;
+    height: fit-content;
+    width: 400px;
+    max-width: calc(100vw - 2rem);
+    overflow: auto;
+    transform-origin: 100% calc(var(--button-size) * -2);
+    color: #D9D9C3;
+}
+
+ol {
+    text-align: left;
+}
+
+li {
+    margin-bottom: 5px;
+}
+
+details div::-webkit-scrollbar {
+    width: 15px;
+    background-color: #1e1e27;
+}
+
+details div::-webkit-scrollbar-thumb {
+    width: 5px;
+    border-radius: 99em;
+    background-color: #95a3b9;
+    border: 5px solid #1e1e27;
+}
+
+details div>*+* {
+    margin-top: 0.75em;
+}
+
+details[open] div {
+    animation: scale 0.25s ease;
+}
+
+@keyframes scale {
+    0% {
+        transform: scale(0);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
